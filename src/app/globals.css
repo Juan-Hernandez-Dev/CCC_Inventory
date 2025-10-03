@@ -1,4 +1,13 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* scroll sutil para tarjetas largas */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
 
 :root {
   --background: #ffffff;

@@ -21,7 +21,7 @@ type Movement = {
   stock: number;
 };
 
-/** Datos demo para render (puedes sustituir por fetch/API más adelante) */
+/** Datos demo para render */
 const INITIAL_MOVES: Movement[] = [
   {
     id: "BOL-012",
@@ -441,4 +441,8 @@ function XIcon() {
       <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
+
+
 }
+
+
