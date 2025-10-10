@@ -1,105 +1,126 @@
-import Image from "next/image";
+"use client";
 
+import Header from '../../components/Header';
+import Sidebar from '../../components/Sidebar';
+import React from "react";
+import data from '../../data/productos.json';
+import { MdInventory2, MdError, MdSyncAlt, MdWarning, MdCancel } from "react-icons/md";
 
+export default function Page() {
+  const [sidebarWidth, setSidebarWidth] = React.useState('64px');
 
-export default function Home() {
+  // Card Metrics
+  const totalProducts = data.productos.length;
+  const lowStock = data.productos.filter(p => p.stock <= 5).length;
+  const recentMovements = 45; // Example static number
+  const lastMovement = "27/09/2025"; // Example static date
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
+      <Sidebar onWidthChange={setSidebarWidth} />
+      <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
+        <Header />
+        <div className="p-8 bg-[#f5f5f5] min-h-screen">
+          {/* Dashboard Title */}
+          <h1 className="text-2xl mb-4" style={{ fontWeight: 'bold', color: '#1F2937' }}>
+            Dashboard Statistics
+          </h1>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            {/* Total Products */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
+              <div className="flex items-center justify-between">
+                {/* Total Products */}
+                <span className="text-base font-bold text-gray-500 tracking-wide">TOTAL PRODUCTS</span>
+                <span className="bg-gray-100 rounded-full p-3">
+                  <MdInventory2 className="text-[#3F54CE]" size={36} />
+                </span>
+              </div>
+              <div className="mt-6 mb-3 flex flex-col items-start">
+                <span className="text-5xl font-extrabold text-[#3F54CE]">{totalProducts}</span>
+                <span className="text-3xl font-extrabold text-[#3F54CE]">Products</span>
+              </div>
+              {/* Example static change indicator */}
+              <div className="text-base text-green-600 font-semibold flex items-center gap-1">
+                ↑ +5% since Last Week
+              </div>
+            </div>
+            {/* Low Stock */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold text-gray-500 tracking-wide">LOW STOCK</span>
+                <span className="bg-gray-100 rounded-full p-3">
+                  <MdError className="text-[#FF3B3B]" size={36} />
+                </span>
+              </div>
+              <div className="mt-6 mb-3 flex flex-col items-start">
+                <span className="text-5xl font-extrabold text-[#FF3B3B]">{lowStock}</span>
+                <span className="text-3xl font-extrabold text-[#FF3B3B]">Products</span>
+              </div>
+              {/* Example static change indicator */}
+              <div className="text-base text-red-500 font-semibold flex items-center gap-1">
+                ↓ +5% since Last Week
+              </div>
+            </div>
+            {/* Recent Movements */}
+            <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold text-gray-500 tracking-wide">RECENT MOVEMENTS</span>
+                <span className="bg-gray-100 rounded-full p-3">
+                  <MdSyncAlt className="text-[#FFB349]" size={36} />
+                </span>
+              </div>
+              <div className="mt-6 mb-3 flex flex-col items-start">
+                <span className="text-5xl font-extrabold text-[#FFB349]">{recentMovements}</span>
+                <span className="text-3xl font-extrabold text-[#FFB349]">Movements</span>
+              </div>
+              <div className="text-base text-gray-500 font-semibold">
+                Last Movement: {lastMovement}
+              </div>
+            </div>
+          </div>
+          {/* Low Stock Products Table */}
+          <div className="bg-[#f5f5f5] p-6 rounded-xl shadow mb-8">
+            <h1 className="text-2xl mb-4" style={{ fontWeight: 'bold', color: '#1F2937' }}>Low Stock Products</h1>
+            <table className="w-full border-collapse rounded shadow">
+              <thead>
+                <tr className="bg-[#FFB349] text-[#1F2937]">
+                  <th className="p-2 text-center">SKU</th>
+                  <th className="p-2 text-center">Product</th>
+                  <th className="p-2 text-center">Category</th>
+                  <th className="p-2 text-center">Stock</th>
+                  <th className="p-2 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.productos
+                  .filter(p => p.estado === "Restock Soon" || p.estado === "Out of Stock")
+                  .map((p, idx) => (
+                    <tr key={p.sku} className={idx % 2 === 0 ? "bg-white" : "bg-gray-100"}>
+                      <td className="p-2 text-center">{p.sku}</td>
+                      <td className="p-2 text-left">{p.nombre}</td>
+                      <td className="p-2 text-center">{p.categoria}</td>
+                      <td className="p-2 text-center">{p.stock}</td>
+                      <td className="p-2 text-center">
+                        {p.estado === "Restock Soon" && (
+                          <span className="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
+                            <MdWarning className="text-yellow-500" size={18} />
+                            Restock Soon
+                          </span>
+                        )}
+                        {p.estado === "Out of Stock" && (
+                          <span className="flex items-center justify-center gap-1 text-red-600 font-semibold">
+                            <MdCancel className="text-red-500" size={18} />
+                            Out of Stock
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
