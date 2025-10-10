@@ -1,33 +1,33 @@
 "use client";
 
-import Header from '../../../components/Header';
-import ProductsTable from '../../../components/ProductsTable';
-import data from '../../../data/productos.json';
-import Sidebar from '../../../components/Sidebar';
+import Header from '../../../components/Header';  // Header component import
+import ProductsTable from '../../../components/ProductsTable';  // ProductsTable component import
+import data from '../../../data/productos.json';  // Sample data import
+import Sidebar from '../../../components/Sidebar';  // Sidebar component import
 import React from "react";
-import { MdSearch, MdFilterList } from "react-icons/md";
+import { MdSearch, MdFilterList } from "react-icons/md";  // Icons import
 
-export default function Page() {
-  const [sidebarWidth, setSidebarWidth] = React.useState('64px');
-  const [search, setSearch] = React.useState('');
-  const [category, setCategory] = React.useState('');
-  const [status, setStatus] = React.useState('');
-  const [filteredProducts, setFilteredProducts] = React.useState(data.productos);
+export default function Page() {  // Page component definition
+  const [sidebarWidth, setSidebarWidth] = React.useState('64px');  // Weidth state for Sidebar
+  const [search, setSearch] = React.useState('');  // Search state
+  const [category, setCategory] = React.useState('');  // Category filter state
+  const [status, setStatus] = React.useState('');  // Status filter state
+  const [filteredProducts, setFilteredProducts] = React.useState(data.productos);  // Filtered products state
 
-  React.useEffect(() => {
+  React.useEffect(() => {  // Effect to filter products based on search, category, and status
     const term = search.toLowerCase();
     setFilteredProducts(
       data.productos.filter(
         (p) =>
           (p.sku.toLowerCase().includes(term) ||
             p.nombre.toLowerCase().includes(term)) &&
-          (category === '' || p.categoria === category) &&
-          (status === '' || p.estado === status)
+          (category === '' || p.categoria === category) &&  // Filter by category if selected
+          (status === '' || p.estado === status)  // Filter by status if selected
       )
     );
   }, [search, category, status]);
 
-  return (
+  return (  // JSX return statement
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
       <Sidebar onWidthChange={setSidebarWidth} />
       <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
@@ -39,6 +39,7 @@ export default function Page() {
               <span className="pl-2 text-gray-400">
                 <MdSearch size={22} />
               </span>
+              {/* Search input */}
               <input
                 type="text"
                 placeholder="Search"

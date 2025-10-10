@@ -70,6 +70,7 @@ const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
               </td>
               <td className="p-2 text-center">{product.stock}</td>
               <td className="p-2 flex justify-center gap-2">
+                {/* Edit button */}
                 <button
                   type="button"
                   className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-md"
@@ -77,6 +78,7 @@ const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
                 >
                   <MdEdit size={20} />
                 </button>
+                {/* Delete button */}
                 <button
                   type="button"
                   className="w-8 h-8 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-md"
