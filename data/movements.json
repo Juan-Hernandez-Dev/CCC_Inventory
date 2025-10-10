@@ -1,5 +1,5 @@
 {
-  "movements" [
+  "movements": [
     {
       "id": "mv-001",
       "date": "2025-09-27T10:15:00Z",
@@ -16,7 +16,16 @@
       "sku": "ESC-002",
       "movement": "Stock Out",
       "quantity": 8,
-      "user": "María López"
+      "user": "Jorge"
+    },
+    {
+      "id": "mv-003",
+      "date": "2025-10-10T13:55:00Z",
+      "product": "Afloja Todo 172ml GDOS",
+      "sku": "FER-005",
+      "movement": "Stock In",
+      "quantity": 100,
+      "user": "Victor Castro"
     }
   ]
 }
