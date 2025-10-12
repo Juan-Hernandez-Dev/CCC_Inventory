@@ -20,7 +20,25 @@ export interface Movement {
   categoria?: string; // categoría agregada dinámicamente
 }
 
-// Formato de fecha
+// Categorías fijas (orden igual al de Products)
+const CATEGORY_OPTIONS = [
+  "BOLSAS",
+  "FERRETERIA",
+  "PERFUMERIA",
+  "LIQ. 5 LITROS",
+  "ESCOBAS",
+  "FIBRAS",
+  "LIQ. 1 LITRO",
+  "JARCERIA",
+  "PASTILLA/AROMA",
+  "PAPEL",
+  "VENENO",
+  "DESPACHADORES",
+  "LIQ. 500 ML",
+  "TRAPADORES BG",
+  "DULCERIA",
+];
+
 const fmtDateTime = (iso: string) => {
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2, "0");
@@ -74,11 +92,13 @@ export default function MovementsPage() {
   const [category, setCategory] = useState("");
   const [movementType, setMovementType] = useState<"" | MovementType>("");
 
-  // Categorías únicas
+  // Categorías combinadas: las fijas + las que aparezcan nuevas dinámicamente
   const categories = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set(CATEGORY_OPTIONS);
     movements.forEach((m) => m.categoria && set.add(m.categoria));
-    return Array.from(set).sort();
+    return CATEGORY_OPTIONS.concat(
+      Array.from(set).filter((c) => !CATEGORY_OPTIONS.includes(c)).sort()
+    );
   }, [movements]);
 
   // Lista filtrada
