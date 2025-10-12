@@ -1,13 +1,11 @@
 {
   "productos": [
     {
-      "id": 1,
       "sku": "BOL-012",
       "nombre": "Bolsa negra 60 x 90 cm (B60)",
-      "precio": 45,
       "categoria": "BOLSAS",
-      "stock": 35,
-      "estado": "Available"
+      "stock": 5,
+      "precio": 45
     },
     {
       "id": 2,
@@ -73,13 +71,11 @@
       "estado": "Available"
     },
     {
-      "id": 9,
       "sku": "ARO-016",
       "nombre": "Aromatizante Aerosol MANZANA CANELA 400ml. WIESE",
-      "precio": 55,
       "categoria": "PASTILLA/AROMA",
-      "stock": 0,
-      "estado": "Out of Stock"
+      "stock": 15,
+      "precio": 55
     },
     {
       "id": 10,
@@ -139,15 +135,15 @@
       "sku": "PRU-001",
       "nombre": "Prueba 1",
       "categoria": "JARCERIA",
-      "stock": 10,
+      "stock": 6,
       "precio": 10
     },
     {
-      "sku": "PRU-002",
-      "nombre": "Prueba dos",
-      "categoria": "PAPEL",
-      "stock": 60,
-      "precio": 120
+      "sku": "PRU-005",
+      "nombre": "Prueba cinco",
+      "categoria": "BOLSAS",
+      "stock": 0,
+      "precio": 50
     }
   ]
 }

@@ -3,13 +3,14 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "../../../components/Header";
 import Sidebar from "../../../components/Sidebar";
-import { MdSearch, MdFilterList } from "react-icons/md";
+import { MdSearch, MdFilterList, MdEdit } from "react-icons/md";
+import Link from "next/link";
 
 // Tipos locales
 export type MovementType = "Stock In" | "Stock Out";
 export interface Movement {
   id: string;
-  date: string; // ISO
+  date: string; // ISO o dd/MM/yyyy HH:mm (legacy)
   product: string;
   sku: string;
   movement: MovementType;
@@ -44,14 +45,40 @@ const CATEGORY_OPTIONS = [
   "DULCERIA",
 ];
 
-const fmtDateTime = (iso: string) => {
-  const d = new Date(iso);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+// >>> fmtDateTime ROBUSTO (acepta ISO y dd/MM/yyyy HH:mm; vacíos muestran "—")
+const fmtDateTime = (raw?: string) => {
+  if (!raw || typeof raw !== "string") return "—";
+
+  // Intento directo (ISO, etc.)
+  let d = new Date(raw);
+  if (!Number.isNaN(d.getTime())) {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(d);
+  }
+
+  // Fallback dd/MM/yyyy HH:mm(:ss) opcional
+  const m = raw.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (m) {
+    const dd = Number(m[1]);
+    const mm = Number(m[2]); // 1..12
+    const yyyy = Number(m[3]);
+    const hh = Number(m[4] ?? 0);
+    const mi = Number(m[5] ?? 0);
+    const ss = Number(m[6] ?? 0);
+    d = new Date(yyyy, mm - 1, dd, hh, mi, ss);
+    if (!Number.isNaN(d.getTime())) {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(d);
+    }
+  }
+
+  return "—";
 };
 
 export default function MovementsPage() {
@@ -87,16 +114,10 @@ export default function MovementsPage() {
     return () => document.removeEventListener("visibilitychange", onFocus);
   }, [loadMovements, loadProducts]);
 
-  // ========= Mapa SKU → categoría / nombre =========
+  // ========= Mapa SKU → categoría =========
   const skuToCategory = useMemo(() => {
     const map = new Map<string, string>();
     productsApi.forEach((p) => map.set(p.sku, p.categoria));
-    return map;
-  }, [productsApi]);
-
-  const skuToName = useMemo(() => {
-    const map = new Map<string, string>();
-    productsApi.forEach((p) => map.set(p.sku, p.nombre));
     return map;
   }, [productsApi]);
 
@@ -156,54 +177,6 @@ export default function MovementsPage() {
     );
   }, [search, category, movementType, sorted]);
 
-  // ========= Paso 5: Crear movimiento desde el botón =========
-  const handleAddMovement = async () => {
-    try {
-      const sku = (prompt("SKU del producto:") || "").trim();
-      if (!sku) return;
-
-      // intentamos precargar nombre desde catálogo
-      const defaultName = skuToName.get(sku) ?? "";
-      const product = (prompt("Nombre del producto:", defaultName) || "").trim();
-      if (!product) return;
-
-      const typeRaw = (prompt('Tipo de movimiento: escribe "in" (Stock In) o "out" (Stock Out):') || "").trim().toLowerCase();
-      const movement: MovementType =
-        typeRaw.startsWith("i") ? "Stock In" :
-        typeRaw.startsWith("o") ? "Stock Out" :
-        (alert("Tipo inválido."), null as any);
-      if (!movement) return;
-
-      const qtyStr = (prompt("Cantidad (número entero positivo):") || "").trim();
-      const quantity = Number(qtyStr);
-      if (!Number.isFinite(quantity) || quantity <= 0) {
-        alert("Cantidad inválida.");
-        return;
-      }
-
-      const user = (prompt("Usuario:", "System") || "System").trim();
-
-      const res = await fetch("/api/movements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product, sku, movement, quantity, user })
-      });
-
-      if (!res.ok) {
-        let msg = "No se pudo crear el movimiento.";
-        try { msg = (await res.json())?.error ?? msg; } catch {}
-        alert(msg);
-        return;
-      }
-
-      // refrescamos lista
-      await loadMovements();
-      alert("Movimiento creado.");
-    } catch {
-      alert("Error creando el movimiento.");
-    }
-  };
-
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
       <Sidebar onWidthChange={setSidebarWidth} />
@@ -214,7 +187,7 @@ export default function MovementsPage() {
           {/* Title */}
           <h1 className="text-2xl mb-4 font-bold text-[#1F2937]">All Movements</h1>
 
-          {/* Search + Filters (idéntico diseño que Products) */}
+          {/* Search + Filters */}
           <div className="flex space-x-4 mb-6">
             <div className="flex items-center w-full max-w-md bg-white rounded border">
               <span className="pl-2 text-gray-400">
@@ -257,14 +230,13 @@ export default function MovementsPage() {
               <option value="Stock Out">Stock Out</option>
             </select>
 
-            {/* Add button */}
-            <button
-              type="button"
-              onClick={handleAddMovement}
+            {/* Add Movement -> página de formulario */}
+            <Link
+              href="/movements/new"
               className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors"
             >
               Add Movement
-            </button>
+            </Link>
           </div>
 
           {/* Último movimiento */}
@@ -283,7 +255,7 @@ export default function MovementsPage() {
             </div>
           </div>
 
-          {/* Tabla (mismo formato que Products, sin recuadro externo) */}
+          {/* Tabla */}
           <div className="rounded-xl shadow overflow-hidden">
             <table className="w-full border-collapse bg-white rounded-xl shadow">
               <thead>
@@ -295,13 +267,16 @@ export default function MovementsPage() {
                   <th className="p-2 text-center">Movimiento</th>
                   <th className="p-2 text-center">Cantidad</th>
                   <th className="p-2 text-center">Usuario</th>
+                  <th className="p-2 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((m, idx) => (
                   <tr
                     key={m.id}
-                    className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-100"} hover:bg-[#FFB34922] transition-colors`}
+                    className={`${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-100"
+                    } hover:bg-[#FFB34922] transition-colors`}
                   >
                     <td className="p-2 text-center">{fmtDateTime(m.date)}</td>
                     <td className="p-2 text-center">{m.sku}</td>
@@ -320,11 +295,20 @@ export default function MovementsPage() {
                     </td>
                     <td className="p-2 text-center">{m.quantity}</td>
                     <td className="p-2 text-center">{m.user}</td>
+                    <td className="p-2 text-center">
+                      <Link
+                        href={`/movements/${encodeURIComponent(m.id)}/edit`}
+                        className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                        title="Edit"
+                      >
+                        <MdEdit size={18} />
+                      </Link>
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-gray-500">
+                    <td colSpan={8} className="p-6 text-center text-gray-500">
                       No hay movimientos con los filtros actuales.
                     </td>
                   </tr>

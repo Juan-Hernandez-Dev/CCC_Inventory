@@ -1,21 +1,28 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { Product } from "@/types_inventory/inventory";
 
-const productsPath = path.join(process.cwd(), "data", "productos.json");
+export type Product = {
+  sku: string;
+  nombre: string;
+  categoria: string;
+  stock: number;
+  precio: number;
+};
 
-type ProductsFileShape =
-  | { productos: Product[] }
-  | Product[]; // por si tu archivo es arreglo plano
+const filePath = path.join(process.cwd(), "data", "productos.json");
 
-async function readRaw(): Promise<ProductsFileShape> {
-  const buf = await fs.readFile(productsPath, "utf8");
-  return JSON.parse(buf);
+type FileShape = { productos: Product[] } | Product[];
+
+async function readRaw(): Promise<FileShape> {
+  try {
+    const txt = await fs.readFile(filePath, "utf8");
+    return JSON.parse(txt);
+  } catch {
+    return { productos: [] };
+  }
 }
-
-async function writeRaw(data: ProductsFileShape) {
-  const pretty = JSON.stringify(data, null, 2);
-  await fs.writeFile(productsPath, pretty, "utf8");
+async function writeRaw(data: FileShape) {
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
 export async function readProducts(): Promise<Product[]> {
@@ -23,28 +30,24 @@ export async function readProducts(): Promise<Product[]> {
   return Array.isArray(raw) ? raw : raw.productos ?? [];
 }
 
-export async function writeProducts(products: Product[]): Promise<void> {
-  // preserva el formato original si venía como { productos: [...] }
+export async function writeProducts(list: Product[]) {
   const raw = await readRaw();
-  if (Array.isArray(raw)) {
-    await writeRaw(products);
-  } else {
-    await writeRaw({ productos: products });
-  }
+  if (Array.isArray(raw)) await writeRaw(list);
+  else await writeRaw({ productos: list });
 }
 
-export async function upsertProduct(p: Product): Promise<Product[]> {
-  const products = await readProducts();
-  const idx = products.findIndex((x) => x.sku === p.sku);
-  if (idx >= 0) products[idx] = p;
-  else products.push(p);
-  await writeProducts(products);
-  return products;
+export async function upsertProduct(p: Product) {
+  const list = await readProducts();
+  const i = list.findIndex(x => x.sku === p.sku);
+  if (i >= 0) list[i] = p;
+  else list.push(p);
+  await writeProducts(list);
+  return list;
 }
 
-export async function deleteProduct(sku: string): Promise<Product[]> {
-  const products = await readProducts();
-  const next = products.filter((x) => x.sku !== sku);
+export async function deleteProduct(sku: string) {
+  const list = await readProducts();
+  const next = list.filter(x => x.sku !== sku);
   await writeProducts(next);
   return next;
 }

@@ -5,17 +5,17 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const list = await readMovements();
   const item = list.find(m => m.id === params.id);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(item);
+  return NextResponse.json(item, { status: 200 });
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const patch = await req.json();
   const updated = await updateMovement(params.id, patch);
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(updated);
+  return NextResponse.json(updated, { status: 200 });
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   await deleteMovement(params.id);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { status: 200 });
 }

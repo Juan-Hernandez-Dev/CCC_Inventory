@@ -1,6 +1,86 @@
 {
   "movements": [
     {
+      "id": "",
+      "sku": "PRU-005",
+      "product": "Prueba cinco",
+      "movement": "Stock In",
+      "quantity": 150,
+      "user": "Zuri"
+    },
+    {
+      "id": "02f8292f-08c2-4827-99af-33539bab521b",
+      "product": "Rollo papel JUMBO 360m DALIA (Papel)",
+      "sku": "PAP-011",
+      "movement": "Stock Out",
+      "quantity": 15,
+      "user": "Zuri"
+    },
+    {
+      "id": "0e0ae249-70c4-4998-b02c-ee8f589216f1",
+      "product": "Rollo papel JUMBO 360m DALIA (Papel)",
+      "sku": "PAP-011",
+      "movement": "Stock Out",
+      "quantity": 18,
+      "user": "Zuri"
+    },
+    {
+      "id": "bcc6f8a0-16af-4bd8-a992-b2df28dfdec3",
+      "product": "Prueba 1",
+      "sku": "PRU-001",
+      "movement": "Stock In",
+      "quantity": 10,
+      "user": "Zuri"
+    },
+    {
+      "id": "97d5dc00-426a-4ed9-aa38-28895da1b8cb",
+      "product": "Agua Oxigenada 125ml. PROFESA",
+      "sku": "PER-030",
+      "movement": "Stock In",
+      "quantity": 160,
+      "user": "Zuri"
+    },
+    {
+      "id": "bda904f0-e34b-4193-b35b-a9b13e9bc77a",
+      "product": "Prueba 1",
+      "sku": "PRU-001",
+      "movement": "Stock In",
+      "quantity": 1,
+      "user": "System"
+    },
+    {
+      "id": "cff4bbe4-0d8f-4e17-834f-302cacdfb908",
+      "product": "Prueba 1",
+      "sku": "PRU-001",
+      "movement": "Stock Out",
+      "quantity": 5,
+      "user": "System"
+    },
+    {
+      "id": "d9fac2de-7168-4fb6-aba1-8a1592c05e3c",
+      "product": "Aromatizante Aerosol MANZANA CANELA 400ml. WIESE",
+      "sku": "ARO-016",
+      "movement": "Stock In",
+      "quantity": 15,
+      "user": "System"
+    },
+    {
+      "id": "e3cb6512-0044-4814-af47-44a3e7950762",
+      "product": "Bolsa negra 60 x 90 cm (B60)",
+      "sku": "BOL-012",
+      "movement": "Stock Out",
+      "quantity": 30,
+      "user": "System"
+    },
+    {
+      "id": "22923e85-b805-4c2d-85de-3732ae8b807e",
+      "product": "prueba 4",
+      "sku": "PRU-004",
+      "movement": "Stock In",
+      "quantity": 15,
+      "user": "Juan Hernandez"
+    },
+    {
       "id": "29aecbdf-e343-4371-925b-771943cb94c4",
       "date": "2025-10-12T21:47:34.996Z",
       "product": "Escoba de plástico",
