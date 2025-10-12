@@ -87,10 +87,16 @@ export default function MovementsPage() {
     return () => document.removeEventListener("visibilitychange", onFocus);
   }, [loadMovements, loadProducts]);
 
-  // ========= Mapa SKU → categoría =========
+  // ========= Mapa SKU → categoría / nombre =========
   const skuToCategory = useMemo(() => {
     const map = new Map<string, string>();
     productsApi.forEach((p) => map.set(p.sku, p.categoria));
+    return map;
+  }, [productsApi]);
+
+  const skuToName = useMemo(() => {
+    const map = new Map<string, string>();
+    productsApi.forEach((p) => map.set(p.sku, p.nombre));
     return map;
   }, [productsApi]);
 
@@ -150,6 +156,54 @@ export default function MovementsPage() {
     );
   }, [search, category, movementType, sorted]);
 
+  // ========= Paso 5: Crear movimiento desde el botón =========
+  const handleAddMovement = async () => {
+    try {
+      const sku = (prompt("SKU del producto:") || "").trim();
+      if (!sku) return;
+
+      // intentamos precargar nombre desde catálogo
+      const defaultName = skuToName.get(sku) ?? "";
+      const product = (prompt("Nombre del producto:", defaultName) || "").trim();
+      if (!product) return;
+
+      const typeRaw = (prompt('Tipo de movimiento: escribe "in" (Stock In) o "out" (Stock Out):') || "").trim().toLowerCase();
+      const movement: MovementType =
+        typeRaw.startsWith("i") ? "Stock In" :
+        typeRaw.startsWith("o") ? "Stock Out" :
+        (alert("Tipo inválido."), null as any);
+      if (!movement) return;
+
+      const qtyStr = (prompt("Cantidad (número entero positivo):") || "").trim();
+      const quantity = Number(qtyStr);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        alert("Cantidad inválida.");
+        return;
+      }
+
+      const user = (prompt("Usuario:", "System") || "System").trim();
+
+      const res = await fetch("/api/movements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product, sku, movement, quantity, user })
+      });
+
+      if (!res.ok) {
+        let msg = "No se pudo crear el movimiento.";
+        try { msg = (await res.json())?.error ?? msg; } catch {}
+        alert(msg);
+        return;
+      }
+
+      // refrescamos lista
+      await loadMovements();
+      alert("Movimiento creado.");
+    } catch {
+      alert("Error creando el movimiento.");
+    }
+  };
+
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
       <Sidebar onWidthChange={setSidebarWidth} />
@@ -203,9 +257,10 @@ export default function MovementsPage() {
               <option value="Stock Out">Stock Out</option>
             </select>
 
-            {/* Add button (pendiente de enganchar al POST /api/movements) */}
+            {/* Add button */}
             <button
               type="button"
+              onClick={handleAddMovement}
               className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors"
             >
               Add Movement

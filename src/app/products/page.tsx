@@ -42,7 +42,7 @@ export default function Page() {
   const [category, setCategory] = React.useState("");
   const [status, setStatus] = React.useState("");
 
-  // Productos desde API
+  // Products API
   const [products, setProducts] = React.useState<Product[]>([]);
   const loadProducts = React.useCallback(async () => {
     const res = await fetch("/api/products", { cache: "no-store" });
@@ -50,7 +50,7 @@ export default function Page() {
     setProducts(json.productos ?? []);
   }, []);
 
-  // ✅ Movements desde API
+  // Movements API
   const [movements, setMovements] = React.useState<Movement[]>([]);
   const loadMovements = React.useCallback(async () => {
     const res = await fetch("/api/movements", { cache: "no-store" });
@@ -66,7 +66,7 @@ export default function Page() {
     return () => document.removeEventListener("visibilitychange", onFocus);
   }, [loadProducts, loadMovements]);
 
-  // Deltas por SKU
+  // Delta por SKU
   const deltaBySku = React.useMemo(() => {
     return movements.reduce((acc: Record<string, number>, m) => {
       const sign = m.movement === "Stock In" ? 1 : -1;
@@ -75,7 +75,7 @@ export default function Page() {
     }, {});
   }, [movements]);
 
-  // Derivar stock efectivo + estado
+  // Derivar stock/estado
   const derived = React.useMemo(() => {
     return products.map((p) => {
       const effectiveStock = (p.stock ?? 0) + (deltaBySku[p.sku] ?? 0);
@@ -101,7 +101,7 @@ export default function Page() {
     );
   }, [search, category, status, derived]);
 
-  // Edit / Delete (API)
+  // Edit/Delete
   const handleEdit = (p: Product) => {
     router.push(`/products/edit?sku=${encodeURIComponent(p.sku)}`);
   };
@@ -110,7 +110,9 @@ export default function Page() {
     if (!confirm(`Delete product ${p.sku} - ${p.nombre}?`)) return;
     const res = await fetch(`/api/products/${encodeURIComponent(p.sku)}`, { method: "DELETE" });
     if (!res.ok) {
-      alert("Could not delete product.");
+      let msg = "Could not delete product.";
+      try { msg = (await res.json())?.error ?? msg; } catch {}
+      alert(msg);
       return;
     }
     await loadProducts();
@@ -128,9 +130,7 @@ export default function Page() {
 
           <div className="flex space-x-4 mb-4">
             <div className="flex items-center w-full max-w-md bg-white rounded border">
-              <span className="pl-2 text-gray-400">
-                <MdSearch size={22} />
-              </span>
+              <span className="pl-2 text-gray-400"><MdSearch size={22} /></span>
               <input
                 type="text"
                 placeholder="Search"
@@ -145,9 +145,7 @@ export default function Page() {
 
             <select className="p-2 border rounded bg-white" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">Category</option>
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
+              {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
             </select>
 
             <select className="p-2 border rounded bg-white" value={status} onChange={(e) => setStatus(e.target.value)}>

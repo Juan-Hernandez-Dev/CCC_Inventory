@@ -31,6 +31,7 @@ export default function EditProductPage() {
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [originalStock, setOriginalStock] = useState<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -42,7 +43,8 @@ export default function EditProductPage() {
         if (res.status === 404) {
           if (isMounted) {
             setNotFound(true);
-            setForm(f => ({ ...f, sku })); // permite crear
+            setForm(f => ({ ...f, sku }));
+            setOriginalStock(0);
           }
         } else if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
@@ -56,9 +58,10 @@ export default function EditProductPage() {
               stock: Number(p.stock ?? 0),
               precio: Number(p.precio ?? 0),
             });
+            setOriginalStock(Number(p.stock ?? 0));
           }
         }
-      } catch (e: any) {
+      } catch {
         if (isMounted) setApiError("No se pudo cargar el producto.");
       } finally {
         if (isMounted) setLoading(false);
@@ -91,14 +94,32 @@ export default function EditProductPage() {
     setSaving(true);
     setApiError(null);
     try {
+      // 1) Guardar producto
       const res = await fetch(`/api/products/${encodeURIComponent(form.sku)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // 2) Si cambió el stock, registrar movimiento por la diferencia
+      const diff = Number(form.stock) - Number(originalStock);
+      if (diff !== 0) {
+        await fetch("/api/movements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product: form.nombre,
+            sku: form.sku,
+            movement: diff > 0 ? "Stock In" : "Stock Out",
+            quantity: Math.abs(diff),
+            user: "System",
+          }),
+        });
+      }
+
       router.push("/products");
-    } catch (err) {
+    } catch {
       setApiError("No se pudo guardar.");
     } finally {
       setSaving(false);
@@ -127,66 +148,46 @@ export default function EditProductPage() {
 
           <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-3xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* SKU */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                <input
-                  type="text"
-                  value={form.sku}
-                  disabled
-                  className="w-full border rounded p-2 bg-gray-100 text-gray-600 border-gray-300"
-                />
+                <input type="text" value={form.sku} disabled className="w-full border rounded p-2 bg-gray-100 text-gray-600 border-gray-300" />
                 {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku}</p>}
               </div>
 
-              {/* Nombre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input
-                  type="text"
-                  value={form.nombre}
-                  onChange={(e) => handleChange("nombre", e.target.value)}
+                  type="text" value={form.nombre} onChange={(e) => handleChange("nombre", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.nombre ? "border-red-500" : "border-gray-300"}`}
-                  placeholder="Nombre del producto"
                 />
                 {errors.nombre && <p className="text-sm text-red-600 mt-1">{errors.nombre}</p>}
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
-                  value={form.categoria}
-                  onChange={(e) => handleChange("categoria", e.target.value)}
+                  value={form.categoria} onChange={(e) => handleChange("categoria", e.target.value)}
                   className={`w-full border rounded p-2 bg-white ${errors.categoria ? "border-red-500" : "border-gray-300"}`}
                 >
                   <option value="">Selecciona categoría</option>
-                  {CATEGORY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
                 {errors.categoria && <p className="text-sm text-red-600 mt-1">{errors.categoria}</p>}
               </div>
 
-              {/* Stock */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                 <input
-                  type="number"
-                  min={0}
-                  value={form.stock ?? 0}
-                  onChange={(e) => handleChange("stock", e.target.value)}
+                  type="number" min={0} value={form.stock ?? 0} onChange={(e) => handleChange("stock", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.stock ? "border-red-500" : "border-gray-300"}`}
                 />
                 {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
               </div>
 
-              {/* Precio */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
                 <input
-                  type="number"
-                  min={0}
-                  value={form.precio ?? 0}
-                  onChange={(e) => handleChange("precio", e.target.value)}
+                  type="number" min={0} value={form.precio ?? 0} onChange={(e) => handleChange("precio", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.precio ? "border-red-500" : "border-gray-300"}`}
                 />
                 {errors.precio && <p className="text-sm text-red-600 mt-1">{errors.precio}</p>}
@@ -203,7 +204,7 @@ export default function EditProductPage() {
             </div>
 
             <p className="text-xs text-gray-500 mt-4">
-              *Se guarda en <code>data/productos.json</code> a través de la API.
+              *Se guarda en <code>data/productos.json</code> y si cambia el stock se registra un movimiento automático.
             </p>
           </form>
         </div>

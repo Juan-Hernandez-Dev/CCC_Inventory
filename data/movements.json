@@ -1,6 +1,24 @@
 {
   "movements": [
     {
+      "id": "29aecbdf-e343-4371-925b-771943cb94c4",
+      "date": "2025-10-12T21:47:34.996Z",
+      "product": "Escoba de plástico",
+      "sku": "ESC-002",
+      "movement": "Stock In",
+      "quantity": 20,
+      "user": "Juan Hernández"
+    },
+    {
+      "id": "df8df5f7-c2d7-4121-a0b0-d32e82111b52",
+      "date": "2025-10-12T21:46:13.722Z",
+      "product": "Prueba tres",
+      "sku": "PRU-003",
+      "movement": "Stock In",
+      "quantity": 120,
+      "user": "Juan Hernández"
+    },
+    {
       "id": "mv-001",
       "date": "2025-09-27T10:15:00Z",
       "product": "Bolsa negra 60 x 90 cm (B60)",
