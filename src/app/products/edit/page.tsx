@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Header from "../../../../components/Header";
 import Sidebar from "../../../../components/Sidebar";
 
@@ -11,7 +11,7 @@ const CATEGORY_OPTIONS = [
   "LIQ. 500 ML","TRAPADORES BG","DULCERIA"
 ];
 
-type NewProduct = {
+type Product = {
   sku: string;
   nombre: string;
   categoria: string;
@@ -19,27 +19,41 @@ type NewProduct = {
   precio: number;
 };
 
-export default function NewProductPage() {
+export default function EditProductPage() {
   const router = useRouter();
+  const search = useSearchParams();
   const [sidebarWidth, setSidebarWidth] = useState("64px");
+  const sku = search.get("sku") ?? "";
 
-  const [form, setForm] = useState<NewProduct>({
-    sku: "",
-    nombre: "",
-    categoria: "",
-    stock: 0,
-    precio: 0,
+  const [form, setForm] = useState<Product>({
+    sku, nombre: "", categoria: "", stock: 0, precio: 0
   });
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
 
-  const handleChange = (k: keyof NewProduct, v: string) => {
-    setForm((prev) => ({
+  useEffect(() => {
+    (async () => {
+      if (!sku) return;
+      const res = await fetch(`/api/products/${encodeURIComponent(sku)}`, { cache: "no-store" });
+      if (!res.ok) return; // producto nuevo o inexistente
+      const prod = (await res.json()) as Product;
+      setForm({
+        sku: prod.sku,
+        nombre: prod.nombre ?? "",
+        categoria: prod.categoria ?? "",
+        stock: Number(prod.stock ?? 0),
+        precio: Number(prod.precio ?? 0),
+      });
+    })();
+  }, [sku]);
+
+  const handleChange = (k: keyof Product, v: string) => {
+    setForm(prev => ({
       ...prev,
-      [k]: k === "stock" || k === "precio" ? (v === "" ? 0 : Number(v)) : v,
+      [k]: k === "stock" || k === "precio" ? (v === "" ? 0 : Number(v)) : v
     }));
   };
 
-  const validate = (): boolean => {
+  const validate = () => {
     const e: { [k: string]: string } = {};
     if (!form.sku.trim()) e.sku = "SKU requerido";
     if (!form.nombre.trim()) e.nombre = "Nombre requerido";
@@ -54,14 +68,13 @@ export default function NewProductPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    const res = await fetch("/api/products", {
-      method: "POST",
+    const res = await fetch(`/api/products/${encodeURIComponent(form.sku)}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-
     if (!res.ok) {
-      alert("No se pudo guardar el producto.");
+      alert("No se pudo guardar.");
       return;
     }
     router.push("/products");
@@ -73,24 +86,22 @@ export default function NewProductPage() {
       <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
         <Header />
         <div className="p-4 bg-[#f5f5f5] min-h-screen">
-          <h1 className="text-2xl mb-4 font-bold text-[#1F2937]">Add Product</h1>
+          <h1 className="text-2xl mb-4 font-bold text-[#1F2937]">Edit Product</h1>
 
           <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-3xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* SKU */}
+              {/* SKU (readonly si ya existe) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
                 <input
                   type="text"
                   value={form.sku}
-                  onChange={(e) => handleChange("sku", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.sku ? "border-red-500" : "border-gray-300"}`}
-                  placeholder="e.g. BOL-012"
+                  disabled
+                  className="w-full border rounded p-2 bg-gray-100 text-gray-600 border-gray-300"
                 />
                 {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku}</p>}
               </div>
 
-              {/* Nombre */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input
@@ -98,12 +109,10 @@ export default function NewProductPage() {
                   value={form.nombre}
                   onChange={(e) => handleChange("nombre", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.nombre ? "border-red-500" : "border-gray-300"}`}
-                  placeholder="Nombre del producto"
                 />
                 {errors.nombre && <p className="text-sm text-red-600 mt-1">{errors.nombre}</p>}
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
@@ -119,7 +128,6 @@ export default function NewProductPage() {
                 {errors.categoria && <p className="text-sm text-red-600 mt-1">{errors.categoria}</p>}
               </div>
 
-              {/* Stock */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                 <input
@@ -128,12 +136,10 @@ export default function NewProductPage() {
                   value={form.stock ?? 0}
                   onChange={(e) => handleChange("stock", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.stock ? "border-red-500" : "border-gray-300"}`}
-                  placeholder="0"
                 />
                 {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
               </div>
 
-              {/* Precio */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
                 <input
@@ -142,7 +148,6 @@ export default function NewProductPage() {
                   value={form.precio ?? 0}
                   onChange={(e) => handleChange("precio", e.target.value)}
                   className={`w-full border rounded p-2 focus:outline-none ${errors.precio ? "border-red-500" : "border-gray-300"}`}
-                  placeholder="0"
                 />
                 {errors.precio && <p className="text-sm text-red-600 mt-1">{errors.precio}</p>}
               </div>
@@ -158,7 +163,7 @@ export default function NewProductPage() {
             </div>
 
             <p className="text-xs text-gray-500 mt-4">
-              *Este formulario ahora guarda en <code>data/productos.json</code> a través de la API.
+              *Se guarda en <code>data/productos.json</code> a través de la API.
             </p>
           </form>
         </div>

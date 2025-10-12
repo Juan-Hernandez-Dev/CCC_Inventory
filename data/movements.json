@@ -35,6 +35,15 @@
       "movement": "Stock In",
       "quantity": 100,
       "user": "Victor Castro"
+    },
+    {
+      "id": "mv-005",
+      "date": "2025-10-12T01:08:00Z",
+      "product": "Afloja Todo 172ml GDOS",
+      "sku": "FER-005",
+      "movement": "Stock Out",
+      "quantity": 5,
+      "user": "Jorge"
     }
   ]
 }

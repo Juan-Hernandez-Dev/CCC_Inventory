@@ -4,7 +4,7 @@
       "id": 1,
       "sku": "BOL-012",
       "nombre": "Bolsa negra 60 x 90 cm (B60)",
-      "precio": 45.00,
+      "precio": 45,
       "categoria": "BOLSAS",
       "stock": 35,
       "estado": "Available"
@@ -13,16 +13,16 @@
       "id": 2,
       "sku": "FER-005",
       "nombre": "Afloja Todo 172ml GDOS",
-      "precio": 43.00,
+      "precio": 43,
       "categoria": "FERRETERIA",
-      "stock": 27,
-      "estado": "Available"
+      "stock": 0,
+      "estado": "Out of Stock"
     },
     {
       "id": 3,
       "sku": "PER-030",
       "nombre": "Agua Oxigenada 125ml. PROFESA",
-      "precio": 10.00,
+      "precio": 10,
       "categoria": "PERFUMERIA",
       "stock": 42,
       "estado": "Available"
@@ -31,7 +31,7 @@
       "id": 4,
       "sku": "LIS-013",
       "nombre": "Almorol 5 litros. (AL5)",
-      "precio": 280.00,
+      "precio": 280,
       "categoria": "LIQ. 5 LITROS",
       "stock": 30,
       "estado": "Available"
@@ -40,7 +40,7 @@
       "id": 5,
       "sku": "ESC-001",
       "nombre": "Bastón Capuchón Madera Venta (BCV)",
-      "precio": 17.00,
+      "precio": 17,
       "categoria": "ESCOBAS",
       "stock": 35,
       "estado": "Available"
@@ -49,7 +49,7 @@
       "id": 6,
       "sku": "FIB-002",
       "nombre": "Fibra acero chica 30g. (FA30)",
-      "precio": 5.00,
+      "precio": 5,
       "categoria": "FIBRAS",
       "stock": 4,
       "estado": "Restock Soon"
@@ -58,7 +58,7 @@
       "id": 7,
       "sku": "LI1-012",
       "nombre": "FRUTAL Limpiador Multiusos 1 litro (FR1) LM1",
-      "precio": 15.00,
+      "precio": 15,
       "categoria": "LIQ. 1 LITRO",
       "stock": 39,
       "estado": "Available"
@@ -67,7 +67,7 @@
       "id": 8,
       "sku": "JAR-003",
       "nombre": "Atomizador 250ml (A250)",
-      "precio": 13.00,
+      "precio": 13,
       "categoria": "JARCERIA",
       "stock": 23,
       "estado": "Available"
@@ -76,7 +76,7 @@
       "id": 9,
       "sku": "ARO-016",
       "nombre": "Aromatizante Aerosol MANZANA CANELA 400ml. WIESE",
-      "precio": 55.00,
+      "precio": 55,
       "categoria": "PASTILLA/AROMA",
       "stock": 0,
       "estado": "Out of Stock"
@@ -85,7 +85,7 @@
       "id": 10,
       "sku": "PAP-011",
       "nombre": "Rollo papel JUMBO 360m DALIA (Papel)",
-      "precio": 77.00,
+      "precio": 77,
       "categoria": "PAPEL",
       "stock": 37,
       "estado": "Available"
@@ -94,7 +94,7 @@
       "id": 11,
       "sku": "VEN-008",
       "nombre": "Laminita RAID c/108 + Aparato Gratis (Veneno)",
-      "precio": 230.00,
+      "precio": 230,
       "categoria": "VENENO",
       "stock": 25,
       "estado": "Available"
@@ -103,7 +103,7 @@
       "id": 12,
       "sku": "DES-009",
       "nombre": "Bote negro CHICO con tapa balancín",
-      "precio": 110.00,
+      "precio": 110,
       "categoria": "DESPACHADORES",
       "stock": 40,
       "estado": "Available"
@@ -112,7 +112,7 @@
       "id": 13,
       "sku": "LML-008",
       "nombre": "Jabón para Manos UVA 500ml. (JM500) JM500",
-      "precio": 22.00,
+      "precio": 22,
       "categoria": "LIQ. 500 ML",
       "stock": 33,
       "estado": "Available"
@@ -121,7 +121,7 @@
       "id": 14,
       "sku": "TRA-017",
       "nombre": "Trapeador Hilaza BLANCO #24 BG (HI24)",
-      "precio": 42.00,
+      "precio": 42,
       "categoria": "TRAPADORES BG",
       "stock": 35,
       "estado": "Available"
@@ -130,10 +130,17 @@
       "id": 15,
       "sku": "DUL-019",
       "nombre": "Espuma para fiesta 270ml. GDOS FUNNY SNOW",
-      "precio": 20.00,
+      "precio": 20,
       "categoria": "DULCERIA",
       "stock": 46,
       "estado": "Available"
+    },
+    {
+      "sku": "PRU-001",
+      "nombre": "Prueba 1",
+      "categoria": "JARCERIA",
+      "stock": 10,
+      "precio": 10
     }
   ]
 }

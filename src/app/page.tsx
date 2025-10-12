@@ -4,16 +4,13 @@ import React from "react";
 import Header from "../../components/Header";
 import Sidebar from "../../components/Sidebar";
 import { MdInventory2, MdError, MdSyncAlt, MdWarning, MdCancel } from "react-icons/md";
+// Los movimientos siguen viniendo del JSON + (opcional) localStorage
+import movementsJSON from "../../data/movements.json";
 
-// JSONs (en la RAÍZ del proyecto carpeta `data/`)
-import productsData from "../../data/productos.json";
-import movementsData from "../../data/movements.json";
-
-// ===================== Tipos locales (para no depender de otros imports) =====================
 type MovementType = "Stock In" | "Stock Out";
 type Movement = {
   id: string;
-  date: string;     // ISO date string
+  date: string; // ISO
   product: string;
   sku: string;
   movement: MovementType;
@@ -21,79 +18,106 @@ type Movement = {
   user: string;
 };
 
-type Status = "Available" | "Restock Soon" | "Out of Stock";
-
 type Product = {
   sku: string;
   nombre: string;
   categoria: string;
-  stock: number;        // stock base del JSON de productos
-  // puede venir un "estado" en el JSON, pero lo recalculamos
+  stock: number;
+  precio?: number;
+  estado?: string;
 };
 
-// ===================== Helpers =====================
-const formatDate = (d: Date) => {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-};
+type Status = "Available" | "Restock Soon" | "Out of Stock";
 
-// Soporta ambas estructuras de movements.json:
-// { "movements": [...] }  ó  [ ... ]
-const movements: Movement[] =
-  ((movementsData as any).movements ?? (movementsData as any)) as Movement[];
-
-// ===================== Cálculos de movimientos (Delta por SKU) =====================
-const movementDeltaBySku = movements.reduce((acc: Record<string, number>, m) => {
-  const sign = m.movement === "Stock In" ? 1 : -1;
-  acc[m.sku] = (acc[m.sku] ?? 0) + sign * m.quantity;
-  return acc;
-}, {});
-
-// Productos con stock EFECTIVO y estado derivado
-const rawProducts: Product[] = (productsData as any).productos;
-const productsWithEffective = rawProducts.map((p) => {
-  const delta = movementDeltaBySku[p.sku] ?? 0;
-  const effectiveStock = (p.stock ?? 0) + delta;
-
-  const status: Status =
-    effectiveStock <= 0 ? "Out of Stock" :
-    effectiveStock <= 5 ? "Restock Soon" :
-    "Available";
-
-  return { ...p, effectiveStock, status };
-});
-
-// ===================== Métricas Dashboard =====================
-// Total productos y Low Stock usando el stock EFECTIVO
-const totalProducts = productsWithEffective.length;
-const lowStock = productsWithEffective.filter((p) => p.status !== "Available").length;
-
-// Último movimiento (fecha más reciente)
-const lastMovementDate: Date | null =
-  movements.length > 0
-    ? movements
-        .map((m) => new Date(m.date))
-        .sort((a, b) => b.getTime() - a.getTime())[0]
-    : null;
-
-const lastMovement = lastMovementDate ? formatDate(lastMovementDate) : "—";
-
-// Movimientos de HOY (para la tarjeta “RECENT MOVEMENTS”)
-const startOfToday = new Date();
-startOfToday.setHours(0, 0, 0, 0);
-const startOfTomorrow = new Date(startOfToday);
-startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
-
-const recentMovements = movements.filter((m) => {
-  const d = new Date(m.date);
-  return d >= startOfToday && d < startOfTomorrow;
-}).length;
-
-// ===================== Componente =====================
-export default function Page() {
+export default function DashboardPage() {
   const [sidebarWidth, setSidebarWidth] = React.useState("64px");
+
+  // -------- Productos desde la API (vivos) --------
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const loadProducts = React.useCallback(async () => {
+    const res = await fetch("/api/products", { cache: "no-store" });
+    const json = await res.json();
+    setProducts(json.productos ?? []);
+  }, []);
+
+  // -------- Movimientos: JSON base + (opcional) localStorage --------
+  const baseMovements = React.useMemo(
+    () => ((movementsJSON as any).movements ?? (movementsJSON as any)) as Movement[],
+    []
+  );
+  const [userMovements, setUserMovements] = React.useState<Movement[]>([]);
+  const loadUserMovements = React.useCallback(() => {
+    try {
+      const raw = localStorage.getItem("userMovements");
+      const arr = raw ? JSON.parse(raw) : [];
+      setUserMovements(Array.isArray(arr) ? arr : []);
+    } catch {
+      setUserMovements([]);
+    }
+  }, []);
+
+  // Cargar y refrescar al volver a la pestaña o si otra pestaña escribe en LS
+  React.useEffect(() => {
+    loadProducts();
+    loadUserMovements();
+
+    const onFocus = () => {
+      loadProducts();
+      loadUserMovements();
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "userMovements") loadUserMovements();
+    };
+
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadProducts, loadUserMovements]);
+
+  // -------- Unir movimientos y calcular deltas --------
+  const allMovements = React.useMemo(
+    () => [...baseMovements, ...userMovements],
+    [baseMovements, userMovements]
+  );
+
+  const deltaBySku = React.useMemo(() => {
+    return allMovements.reduce((acc: Record<string, number>, m) => {
+      const sign = m.movement === "Stock In" ? 1 : -1;
+      acc[m.sku] = (acc[m.sku] ?? 0) + sign * m.quantity;
+      return acc;
+    }, {});
+  }, [allMovements]);
+
+  // -------- Derivar stock efectivo + estado --------
+  const derivedProducts = React.useMemo(() => {
+    return products.map((p) => {
+      const effectiveStock = (p.stock ?? 0) + (deltaBySku[p.sku] ?? 0);
+      const derivedStatus: Status =
+        effectiveStock <= 0 ? "Out of Stock" :
+        effectiveStock <= 5 ? "Restock Soon" :
+        "Available";
+      return { ...p, stock: effectiveStock, estado: derivedStatus };
+    });
+  }, [products, deltaBySku]);
+
+  // -------- Métricas --------
+  const totalProducts = derivedProducts.length;
+  const lowStock = derivedProducts.filter((p) => p.stock <= 5).length;
+  const recentMovements = allMovements.length;
+  const lastMovement = React.useMemo(() => {
+    if (allMovements.length === 0) return "—";
+    const latest = allMovements.reduce((a, b) =>
+      new Date(a.date).getTime() > new Date(b.date).getTime() ? a : b
+    );
+    const d = new Date(latest.date);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }, [allMovements]);
 
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
@@ -101,11 +125,12 @@ export default function Page() {
       <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
         <Header />
         <div className="p-8 bg-[#f5f5f5] min-h-screen">
-          {/* Dashboard Title */}
+          {/* Título */}
           <h1 className="text-2xl mb-4" style={{ fontWeight: "bold", color: "#1F2937" }}>
             Dashboard Statistics
           </h1>
 
+          {/* Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
             {/* Total Products */}
             <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
@@ -159,7 +184,7 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Low Stock Products Table (con stock EFECTIVO) */}
+          {/* Low Stock Products Table */}
           <div className="bg-[#f5f5f5] p-6 rounded-xl shadow mb-8">
             <h1 className="text-2xl mb-4" style={{ fontWeight: "bold", color: "#1F2937" }}>
               Low Stock Products
@@ -175,22 +200,22 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {productsWithEffective
-                  .filter((p) => p.status === "Restock Soon" || p.status === "Out of Stock")
+                {derivedProducts
+                  .filter((p) => p.estado === "Restock Soon" || p.estado === "Out of Stock")
                   .map((p, idx) => (
                     <tr key={p.sku} className={idx % 2 === 0 ? "bg-white" : "bg-gray-100"}>
                       <td className="p-2 text-center">{p.sku}</td>
                       <td className="p-2 text-left">{p.nombre}</td>
                       <td className="p-2 text-center">{p.categoria}</td>
-                      <td className="p-2 text-center">{(p as any).effectiveStock}</td>
+                      <td className="p-2 text-center">{p.stock}</td>
                       <td className="p-2 text-center">
-                        {(p as any).status === "Restock Soon" && (
+                        {p.estado === "Restock Soon" && (
                           <span className="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
                             <MdWarning className="text-yellow-500" size={18} />
                             Restock Soon
                           </span>
                         )}
-                        {(p as any).status === "Out of Stock" && (
+                        {p.estado === "Out of Stock" && (
                           <span className="flex items-center justify-center gap-1 text-red-600 font-semibold">
                             <MdCancel className="text-red-500" size={18} />
                             Out of Stock

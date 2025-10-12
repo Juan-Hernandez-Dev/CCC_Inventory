@@ -1,16 +1,24 @@
+"use client";
+
 import React from 'react';
 import { MdEdit, MdClose, MdCheckCircle, MdWarning, MdCancel } from 'react-icons/md';
 
 // Define the Product type
-interface Product {
-  id?: number;              // ← hacerlo opcional porque muchos registros no traen id
+export interface Product {
+  id?: number; // opcional: muchos registros no traen id
   sku: string;
   nombre: string;
   precio: number;
   categoria: string;
   stock: number;
-  estado: string;
+  estado: string; // "Available" | "Restock Soon" | "Out of Stock"
 }
+
+type Props = {
+  products: Product[];
+  onEdit?: (p: Product) => void;
+  onDelete?: (p: Product) => void;
+};
 
 // Helper to render status with color and icon
 const StatusCell: React.FC<{ status: string }> = ({ status }) => {
@@ -38,12 +46,10 @@ const StatusCell: React.FC<{ status: string }> = ({ status }) => {
       </span>
     );
   }
-  // Default
   return <span>{status}</span>;
 };
 
-// Component to display the products table
-const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
+const ProductsTable: React.FC<Props> = ({ products, onEdit, onDelete }) => {
   return (
     <div>
       <table className="w-full border-collapse rounded-lg shadow-bottom-sides">
@@ -76,6 +82,7 @@ const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
                 {/* Edit button */}
                 <button
                   type="button"
+                  onClick={() => onEdit?.(product)}
                   className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                   title="Edit"
                 >
@@ -84,6 +91,7 @@ const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
                 {/* Delete button */}
                 <button
                   type="button"
+                  onClick={() => onDelete?.(product)}
                   className="w-8 h-8 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-md"
                   title="Delete"
                 >
