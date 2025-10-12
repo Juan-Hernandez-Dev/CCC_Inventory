@@ -7,9 +7,26 @@ import ProductsTable from "../../../components/ProductsTable";
 import Sidebar from "../../../components/Sidebar";
 import React from "react";
 import { MdSearch, MdFilterList } from "react-icons/md";
-import type { Product as BaseProduct, Movement } from "@/types_inventory/inventory";
-import movementsJSON from "../../../data/movements.json";
-  
+
+type MovementType = "Stock In" | "Stock Out";
+type Movement = {
+  id: string;
+  date: string;
+  product: string;
+  sku: string;
+  movement: MovementType;
+  quantity: number;
+  user: string;
+};
+
+type Product = {
+  sku: string;
+  nombre: string;
+  categoria: string;
+  stock: number;
+  precio: number;
+  estado?: string;
+};
 type Status = "Available" | "Restock Soon" | "Out of Stock";
 
 const CATEGORY_OPTIONS = [
@@ -25,36 +42,40 @@ export default function Page() {
   const [category, setCategory] = React.useState("");
   const [status, setStatus] = React.useState("");
 
-  // --- Movimientos estáticos (si luego quieres que también se editen, hacemos otra API) ---
-  const baseMovements = React.useMemo(
-    () => ((movementsJSON as any).movements ?? (movementsJSON as any)) as Movement[],
-    []
-  );
-
-  // --- Productos desde la API (vivos) ---
-  const [products, setProducts] = React.useState<BaseProduct[]>([]);
+  // Productos desde API
+  const [products, setProducts] = React.useState<Product[]>([]);
   const loadProducts = React.useCallback(async () => {
     const res = await fetch("/api/products", { cache: "no-store" });
     const json = await res.json();
     setProducts(json.productos ?? []);
   }, []);
+
+  // ✅ Movements desde API
+  const [movements, setMovements] = React.useState<Movement[]>([]);
+  const loadMovements = React.useCallback(async () => {
+    const res = await fetch("/api/movements", { cache: "no-store" });
+    const json = await res.json();
+    setMovements(json.movements ?? []);
+  }, []);
+
   React.useEffect(() => {
     loadProducts();
-    const onFocus = () => loadProducts();
+    loadMovements();
+    const onFocus = () => { loadProducts(); loadMovements(); };
     document.addEventListener("visibilitychange", onFocus);
     return () => document.removeEventListener("visibilitychange", onFocus);
-  }, [loadProducts]);
+  }, [loadProducts, loadMovements]);
 
-  // --- Delta por SKU desde movimientos ---
+  // Deltas por SKU
   const deltaBySku = React.useMemo(() => {
-    return baseMovements.reduce((acc: Record<string, number>, m) => {
+    return movements.reduce((acc: Record<string, number>, m) => {
       const sign = m.movement === "Stock In" ? 1 : -1;
       acc[m.sku] = (acc[m.sku] ?? 0) + sign * m.quantity;
       return acc;
     }, {});
-  }, [baseMovements]);
+  }, [movements]);
 
-  // --- Derivar stock efectivo + estado ---
+  // Derivar stock efectivo + estado
   const derived = React.useMemo(() => {
     return products.map((p) => {
       const effectiveStock = (p.stock ?? 0) + (deltaBySku[p.sku] ?? 0);
@@ -66,7 +87,7 @@ export default function Page() {
     });
   }, [products, deltaBySku]);
 
-  // --- Filtros UI ---
+  // Filtros
   const [filtered, setFiltered] = React.useState(derived);
   React.useEffect(() => {
     const term = search.toLowerCase();
@@ -80,16 +101,14 @@ export default function Page() {
     );
   }, [search, category, status, derived]);
 
-  // --- Edit/Delete usando la API ---
-  const handleEdit = (p: any) => {
+  // Edit / Delete (API)
+  const handleEdit = (p: Product) => {
     router.push(`/products/edit?sku=${encodeURIComponent(p.sku)}`);
   };
 
-  const handleDelete = async (p: any) => {
+  const handleDelete = async (p: Product) => {
     if (!confirm(`Delete product ${p.sku} - ${p.nombre}?`)) return;
-    const res = await fetch(`/api/products/${encodeURIComponent(p.sku)}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(`/api/products/${encodeURIComponent(p.sku)}`, { method: "DELETE" });
     if (!res.ok) {
       alert("Could not delete product.");
       return;

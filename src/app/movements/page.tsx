@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "../../../components/Header";
 import Sidebar from "../../../components/Sidebar";
-import movementsData from "../../../data/movements.json";
-import productsData from "../../../data/productos.json";
 import { MdSearch, MdFilterList } from "react-icons/md";
 
-// Tipos
+// Tipos locales
 export type MovementType = "Stock In" | "Stock Out";
 export interface Movement {
   id: string;
@@ -19,6 +17,13 @@ export interface Movement {
   user: string;
   categoria?: string; // categoría agregada dinámicamente
 }
+type Product = {
+  sku: string;
+  nombre: string;
+  categoria: string;
+  stock: number;
+  precio: number;
+};
 
 // Categorías fijas (orden igual al de Products)
 const CATEGORY_OPTIONS = [
@@ -52,42 +57,65 @@ const fmtDateTime = (iso: string) => {
 export default function MovementsPage() {
   const [sidebarWidth, setSidebarWidth] = useState("64px");
 
-  // Movimientos base
-  const movementsRaw: Movement[] = useMemo(
-    () => ((movementsData as any).movements ?? (movementsData as any)) as Movement[],
-    []
-  );
+  // ========= Carga desde API =========
+  const [movementsApi, setMovementsApi] = useState<Movement[]>([]);
+  const [productsApi, setProductsApi] = useState<Product[]>([]);
 
-  // Mapa SKU → categoría (desde productos.json)
-  const skuToCategory = useMemo(() => {
-    const productos = ((productsData as any).productos ?? (productsData as any)) as Array<{
-      sku: string;
-      categoria: string;
-    }>;
-    const map = new Map<string, string>();
-    productos.forEach((p) => map.set(p.sku, p.categoria));
-    return map;
+  const loadMovements = useCallback(async () => {
+    const res = await fetch("/api/movements", { cache: "no-store" });
+    const json = await res.json();
+    setMovementsApi(json.movements ?? []);
   }, []);
 
+  const loadProducts = useCallback(async () => {
+    const res = await fetch("/api/products", { cache: "no-store" });
+    const json = await res.json();
+    setProductsApi(json.productos ?? []);
+  }, []);
+
+  useEffect(() => {
+    // primera carga
+    loadMovements();
+    loadProducts();
+
+    // refrescar al volver a la pestaña
+    const onFocus = () => {
+      loadMovements();
+      loadProducts();
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    return () => document.removeEventListener("visibilitychange", onFocus);
+  }, [loadMovements, loadProducts]);
+
+  // ========= Mapa SKU → categoría =========
+  const skuToCategory = useMemo(() => {
+    const map = new Map<string, string>();
+    productsApi.forEach((p) => map.set(p.sku, p.categoria));
+    return map;
+  }, [productsApi]);
+
   // Enriquecer movimientos con categoría
-  const movements = useMemo(
+  const movements: Movement[] = useMemo(
     () =>
-      movementsRaw.map((m) => ({
+      movementsApi.map((m) => ({
         ...m,
         categoria: skuToCategory.get(m.sku) ?? "",
       })),
-    [movementsRaw, skuToCategory]
+    [movementsApi, skuToCategory]
   );
 
   // Orden descendente
   const sorted = useMemo(
-    () => [...movements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    () =>
+      [...movements].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
     [movements]
   );
 
   const last = sorted[0];
 
-  // Filtros (igual que Products)
+  // ========= Filtros =========
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [movementType, setMovementType] = useState<"" | MovementType>("");
@@ -175,7 +203,7 @@ export default function MovementsPage() {
               <option value="Stock Out">Stock Out</option>
             </select>
 
-            {/* Add button */}
+            {/* Add button (pendiente de enganchar al POST /api/movements) */}
             <button
               type="button"
               className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors"
@@ -218,9 +246,7 @@ export default function MovementsPage() {
                 {filtered.map((m, idx) => (
                   <tr
                     key={m.id}
-                    className={`${
-                      idx % 2 === 0 ? "bg-white" : "bg-gray-100"
-                    } hover:bg-[#FFB34922] transition-colors`}
+                    className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-100"} hover:bg-[#FFB34922] transition-colors`}
                   >
                     <td className="p-2 text-center">{fmtDateTime(m.date)}</td>
                     <td className="p-2 text-center">{m.sku}</td>
@@ -241,7 +267,6 @@ export default function MovementsPage() {
                     <td className="p-2 text-center">{m.user}</td>
                   </tr>
                 ))}
-
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-6 text-center text-gray-500">

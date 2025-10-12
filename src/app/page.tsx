@@ -4,8 +4,6 @@ import React from "react";
 import Header from "../../components/Header";
 import Sidebar from "../../components/Sidebar";
 import { MdInventory2, MdError, MdSyncAlt, MdWarning, MdCancel } from "react-icons/md";
-// Los movimientos siguen viniendo del JSON + (opcional) localStorage
-import movementsJSON from "../../data/movements.json";
 
 type MovementType = "Stock In" | "Stock Out";
 type Movement = {
@@ -26,13 +24,12 @@ type Product = {
   precio?: number;
   estado?: string;
 };
-
 type Status = "Available" | "Restock Soon" | "Out of Stock";
 
 export default function DashboardPage() {
   const [sidebarWidth, setSidebarWidth] = React.useState("64px");
 
-  // -------- Productos desde la API (vivos) --------
+  // Productos desde la API
   const [products, setProducts] = React.useState<Product[]>([]);
   const loadProducts = React.useCallback(async () => {
     const res = await fetch("/api/products", { cache: "no-store" });
@@ -40,58 +37,37 @@ export default function DashboardPage() {
     setProducts(json.productos ?? []);
   }, []);
 
-  // -------- Movimientos: JSON base + (opcional) localStorage --------
-  const baseMovements = React.useMemo(
-    () => ((movementsJSON as any).movements ?? (movementsJSON as any)) as Movement[],
-    []
-  );
-  const [userMovements, setUserMovements] = React.useState<Movement[]>([]);
-  const loadUserMovements = React.useCallback(() => {
-    try {
-      const raw = localStorage.getItem("userMovements");
-      const arr = raw ? JSON.parse(raw) : [];
-      setUserMovements(Array.isArray(arr) ? arr : []);
-    } catch {
-      setUserMovements([]);
-    }
+  //  Movements desde la API
+  const [movements, setMovements] = React.useState<Movement[]>([]);
+  const loadMovements = React.useCallback(async () => {
+    const res = await fetch("/api/movements", { cache: "no-store" });
+    const json = await res.json();
+    setMovements(json.movements ?? []);
   }, []);
 
-  // Cargar y refrescar al volver a la pestaña o si otra pestaña escribe en LS
+  // Cargar y refrescar al volver a la pestaña
   React.useEffect(() => {
     loadProducts();
-    loadUserMovements();
+    loadMovements();
 
     const onFocus = () => {
       loadProducts();
-      loadUserMovements();
+      loadMovements();
     };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "userMovements") loadUserMovements();
-    };
-
     document.addEventListener("visibilitychange", onFocus);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      document.removeEventListener("visibilitychange", onFocus);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [loadProducts, loadUserMovements]);
+    return () => document.removeEventListener("visibilitychange", onFocus);
+  }, [loadProducts, loadMovements]);
 
-  // -------- Unir movimientos y calcular deltas --------
-  const allMovements = React.useMemo(
-    () => [...baseMovements, ...userMovements],
-    [baseMovements, userMovements]
-  );
-
+  // Deltas por SKU con movimientos de la API
   const deltaBySku = React.useMemo(() => {
-    return allMovements.reduce((acc: Record<string, number>, m) => {
+    return movements.reduce((acc: Record<string, number>, m) => {
       const sign = m.movement === "Stock In" ? 1 : -1;
       acc[m.sku] = (acc[m.sku] ?? 0) + sign * m.quantity;
       return acc;
     }, {});
-  }, [allMovements]);
+  }, [movements]);
 
-  // -------- Derivar stock efectivo + estado --------
+  // Derivar stock efectivo + estado
   const derivedProducts = React.useMemo(() => {
     return products.map((p) => {
       const effectiveStock = (p.stock ?? 0) + (deltaBySku[p.sku] ?? 0);
@@ -103,13 +79,13 @@ export default function DashboardPage() {
     });
   }, [products, deltaBySku]);
 
-  // -------- Métricas --------
+  // Métricas
   const totalProducts = derivedProducts.length;
   const lowStock = derivedProducts.filter((p) => p.stock <= 5).length;
-  const recentMovements = allMovements.length;
+  const recentMovements = movements.length;
   const lastMovement = React.useMemo(() => {
-    if (allMovements.length === 0) return "—";
-    const latest = allMovements.reduce((a, b) =>
+    if (movements.length === 0) return "—";
+    const latest = movements.reduce((a, b) =>
       new Date(a.date).getTime() > new Date(b.date).getTime() ? a : b
     );
     const d = new Date(latest.date);
@@ -117,7 +93,7 @@ export default function DashboardPage() {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
-  }, [allMovements]);
+  }, [movements]);
 
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
@@ -125,14 +101,11 @@ export default function DashboardPage() {
       <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
         <Header />
         <div className="p-8 bg-[#f5f5f5] min-h-screen">
-          {/* Título */}
           <h1 className="text-2xl mb-4" style={{ fontWeight: "bold", color: "#1F2937" }}>
             Dashboard Statistics
           </h1>
 
-          {/* Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-            {/* Total Products */}
             <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
               <div className="flex items-center justify-between">
                 <span className="text-base font-bold text-gray-500 tracking-wide">TOTAL PRODUCTS</span>
@@ -149,7 +122,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Low Stock */}
             <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
               <div className="flex items-center justify-between">
                 <span className="text-base font-bold text-gray-500 tracking-wide">LOW STOCK</span>
@@ -161,12 +133,11 @@ export default function DashboardPage() {
                 <span className="text-5xl font-extrabold text-[#FF3B3B]">{lowStock}</span>
                 <span className="text-3xl font-extrabold text-[#FF3B3B]">Products</span>
               </div>
-              <div className="text-base text-red-500 font-semibold flex items-center gap-1">
+              <div className="text-base text-red-500 font-semibold">
                 ↓ +5% since Last Week
               </div>
             </div>
 
-            {/* Recent Movements */}
             <div className="bg-white rounded-xl shadow p-8 flex flex-col justify-between min-h-[180px] border border-gray-200">
               <div className="flex items-center justify-between">
                 <span className="text-base font-bold text-gray-500 tracking-wide">RECENT MOVEMENTS</span>
@@ -184,7 +155,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Low Stock Products Table */}
           <div className="bg-[#f5f5f5] p-6 rounded-xl shadow mb-8">
             <h1 className="text-2xl mb-4" style={{ fontWeight: "bold", color: "#1F2937" }}>
               Low Stock Products

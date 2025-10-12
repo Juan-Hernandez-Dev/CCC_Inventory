@@ -141,6 +141,13 @@
       "categoria": "JARCERIA",
       "stock": 10,
       "precio": 10
+    },
+    {
+      "sku": "PRU-002",
+      "nombre": "Prueba dos",
+      "categoria": "PAPEL",
+      "stock": 60,
+      "precio": 120
     }
   ]
 }
