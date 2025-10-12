@@ -26,6 +26,15 @@
       "movement": "Stock In",
       "quantity": 100,
       "user": "Victor Castro"
+    },
+    {
+      "id": "mv-004",
+      "date": "2025-10-11T18:18:00Z",
+      "product": "Fibra acero chica 30g. (FA30)",
+      "sku": "FIB-002",
+      "movement": "Stock In",
+      "quantity": 100,
+      "user": "Victor Castro"
     }
   ]
 }
