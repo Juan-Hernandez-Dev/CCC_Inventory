@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import Header from '../../../components/Header';  // Header component import
 import ProductsTable from '../../../components/ProductsTable';  // ProductsTable component import
 import data from '../../../data/productos.json';  // Products base data
-import movementsData from '../../../data/movements.json';  // ⬅️ Movements data (nuevo)
+import movementsData from '../../../data/movements.json';  // Movements data
 import Sidebar from '../../../components/Sidebar';  // Sidebar component import
 import React from "react";
 import { MdSearch, MdFilterList } from "react-icons/md";  // Icons import
@@ -24,11 +25,18 @@ type Product = {
   sku: string;
   nombre: string;
   categoria: string;
-  stock: number;     // stock base del JSON
-  estado?: string;   // puede venir en el JSON, pero lo derivaremos
+  stock: number;     // stock base (o efectivo si lo sobrescribimos)
+  estado?: string;   // derivado abajo
 };
 
 type Status = "Available" | "Restock Soon" | "Out of Stock";
+
+// Categorías para select (idénticas a tu UI)
+const CATEGORY_OPTIONS = [
+  "BOLSAS","FERRETERIA","PERFUMERIA","LIQ. 5 LITROS","ESCOBAS","FIBRAS",
+  "LIQ. 1 LITRO","JARCERIA","PASTILLA/AROMA","PAPEL","VENENO","DESPACHADORES",
+  "LIQ. 500 ML","TRAPADORES BG","DULCERIA"
+];
 
 export default function Page() {  // Page component definition
   const [sidebarWidth, setSidebarWidth] = React.useState('64px');  // Width state for Sidebar
@@ -36,11 +44,30 @@ export default function Page() {  // Page component definition
   const [category, setCategory] = React.useState('');  // Category filter state
   const [status, setStatus] = React.useState('');  // Status filter state
 
+  // ===== 0) Cargar productos agregados por usuario desde localStorage =====
+  const [userProducts, setUserProducts] = React.useState<Product[]>([]);
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem("userProducts");
+      setUserProducts(raw ? JSON.parse(raw) : []);
+    } catch {
+      setUserProducts([]);
+    }
+  }, []);
+
   // ===== 1) Leer datos base =====
   const baseProducts = React.useMemo(
     () => ((data as any).productos ?? (data as any)) as Product[],
     []
   );
+
+  // Mezcla base + user (user sobreescribe si coincide SKU)
+  const allProducts: Product[] = React.useMemo(() => {
+    const map = new Map<string, Product>();
+    baseProducts.forEach(p => map.set(p.sku, p));
+    userProducts.forEach(p => map.set(p.sku, p));
+    return Array.from(map.values());
+  }, [baseProducts, userProducts]);
 
   const movements = React.useMemo(
     () => ((movementsData as any).movements ?? (movementsData as any)) as Movement[],
@@ -57,11 +84,10 @@ export default function Page() {  // Page component definition
   }, [movements]);
 
   // ===== 3) Derivar productos con stock efectivo y status =====
-  // IMPORTANTÍSIMO: mantenemos las MISMAS llaves que usa tu UI/tabla:
   // - Sobrescribimos p.stock con el stock efectivo
   // - Sobrescribimos p.estado con el status derivado
   const derivedProducts = React.useMemo(() => {
-    return baseProducts.map((p) => {
+    return allProducts.map((p) => {
       const effectiveStock = (p.stock ?? 0) + (deltaBySku[p.sku] ?? 0);
       const derivedStatus: Status =
         effectiveStock <= 0 ? "Out of Stock" :
@@ -70,11 +96,11 @@ export default function Page() {  // Page component definition
 
       return {
         ...p,
-        stock: effectiveStock,     // ⬅️ tu tabla seguirá leyendo p.stock, pero ahora es efectivo
-        estado: derivedStatus      // ⬅️ y p.estado ahora es el estado derivado
+        stock: effectiveStock,     // la tabla seguirá leyendo p.stock (efectivo)
+        estado: derivedStatus      // y p.estado ahora es el estado derivado
       };
     });
-  }, [baseProducts, deltaBySku]);
+  }, [allProducts, deltaBySku]);
 
   // ===== 4) Estado de productos filtrados (sobre la lista derivada) =====
   const [filteredProducts, setFilteredProducts] = React.useState<Product[]>(derivedProducts);
@@ -122,21 +148,9 @@ export default function Page() {  // Page component definition
               onChange={e => setCategory(e.target.value)}
             >
               <option value="">Category</option>
-              <option value="BOLSAS">BOLSAS</option>
-              <option value="FERRETERIA">FERRETERIA</option>
-              <option value="PERFUMERIA">PERFUMERIA</option>
-              <option value="LIQ. 5 LITROS">LIQ. 5 LITROS</option>
-              <option value="ESCOBAS">ESCOBAS</option>
-              <option value="FIBRAS">FIBRAS</option>
-              <option value="LIQ. 1 LITRO">LIQ. 1 LITRO</option>
-              <option value="JARCERIA">JARCERIA</option>
-              <option value="PASTILLA/AROMA">PASTILLA/AROMA</option>
-              <option value="PAPEL">PAPEL</option>
-              <option value="VENENO">VENENO</option>
-              <option value="DESPACHADORES">DESPACHADORES</option>
-              <option value="LIQ. 500 ML">LIQ. 500 ML</option>
-              <option value="TRAPADORES BG">TRAPADORES BG</option>
-              <option value="DULCERIA">DULCERIA</option>
+              {CATEGORY_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
             </select>
             <select
               className="p-2 border rounded bg-white"
@@ -148,15 +162,14 @@ export default function Page() {  // Page component definition
               <option value="Restock Soon">Restock Soon</option>
               <option value="Out of Stock">Out of Stock</option>
             </select>
-            <button
-              type="button"
-              className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors"
-            >
+
+            {/* Navega a /products/new */}
+            <Link href="/products/new" className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors">
               Add Product
-            </button>
+            </Link>
           </div>
 
-          {/* 👇 Tu tabla queda idéntica; ahora recibe productos ya derivados */}
+         
           <ProductsTable products={filteredProducts as any} />
         </div>
       </div>

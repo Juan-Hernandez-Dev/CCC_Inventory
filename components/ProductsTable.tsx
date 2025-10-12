@@ -3,7 +3,7 @@ import { MdEdit, MdClose, MdCheckCircle, MdWarning, MdCancel } from 'react-icons
 
 // Define the Product type
 interface Product {
-  id: number;
+  id?: number;              // ← hacerlo opcional porque muchos registros no traen id
   sku: string;
   nombre: string;
   precio: number;
@@ -60,7 +60,10 @@ const ProductsTable: React.FC<{ products: Product[] }> = ({ products }) => {
         </thead>
         <tbody>
           {products.map((product, idx) => (
-            <tr key={product.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}>
+            <tr
+              key={`${product.sku ?? product.id ?? 'no-key'}-${idx}`} // ✅ clave estable y única
+              className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
+            >
               <td className="p-2 text-center">{product.sku}</td>
               <td className="p-2 text-left">{product.nombre}</td>
               <td className="p-2 text-center">${product.precio}</td>
