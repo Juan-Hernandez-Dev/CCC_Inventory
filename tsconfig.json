@@ -14,12 +14,14 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [
-      {
-        "name": "next"
-      }
+      { "name": "next" }
     ],
+    "baseUrl": ".",                       // ⬅️ importante para que funcionen los paths
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"],                   // ya lo tenías, le quité el ./ (funciona igual)
+      "@/components/*": ["components/*"], // ⬅️ components está en la raíz del repo
+      "@/data/*": ["data/*"],             // ⬅️ data en la raíz del repo
+      "@/lib/*": ["src/lib/*"]            // ⬅️ helpers/funciones compartidas
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
