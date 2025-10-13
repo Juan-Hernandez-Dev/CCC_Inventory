@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { readProducts, upsertProduct, deleteProduct } from "@/lib/jsonDb";
 import type { Product } from "@/lib/jsonDb";
 
-// Next 15: params es asíncrono
 type Params = Promise<{ sku: string }>;
 
 export async function GET(_req: Request, ctx: { params: Params }) {
@@ -17,11 +16,11 @@ export async function PUT(req: Request, ctx: { params: Params }) {
   const { sku } = await ctx.params;
   const body = (await req.json()) as Partial<Product>;
 
-  // Ignoramos cualquier "stock" enviado: solo nombre/categoría/precio.
   const productos = await readProducts();
   const existente = productos.find((p) => p.sku === sku);
+
   if (!existente) {
-    // Crear en caso de que no exista (stock = 0; se ajusta solo por Movements)
+    // Crear SIN stock (stock = 0). Stock solo por Movements.
     const nuevo: Product = {
       sku,
       nombre: String(body.nombre ?? ""),
@@ -33,14 +32,14 @@ export async function PUT(req: Request, ctx: { params: Params }) {
     return NextResponse.json({ ok: true, productos: out }, { status: 200 });
   }
 
+  // Editar sin tocar stock
   const actualizado: Product = {
     sku,
     nombre: String(body.nombre ?? existente.nombre),
     categoria: String(body.categoria ?? existente.categoria),
-    stock: existente.stock, // ← no se toca aquí
+    stock: existente.stock, // ← intocable aquí
     precio: Number(body.precio ?? existente.precio),
   };
-
   const out = await upsertProduct(actualizado);
   return NextResponse.json({ ok: true, productos: out }, { status: 200 });
 }

@@ -5,7 +5,7 @@
       "nombre": "Bolsa negra 60 x 90 cm (B60)",
       "categoria": "BOLSAS",
       "stock": 13,
-      "precio": 40
+      "precio": 45
     },
     {
       "sku": "FER-005",
@@ -129,10 +129,31 @@
     },
     {
       "sku": "PRU-001",
-      "nombre": "Prueba uno",
+      "nombre": "prueba",
       "categoria": "BOLSAS",
-      "stock": 4,
-      "precio": 10
+      "stock": 1,
+      "precio": 12
+    },
+    {
+      "sku": "PRU-002",
+      "nombre": "prueba dos",
+      "categoria": "BOLSAS",
+      "stock": 0,
+      "precio": 150
+    },
+    {
+      "sku": "PRU-003",
+      "nombre": "prueba tres",
+      "categoria": "BOLSAS",
+      "stock": 0,
+      "precio": 140
+    },
+    {
+      "sku": "PRU-004",
+      "nombre": "prueba cuatro",
+      "categoria": "BOLSAS",
+      "stock": 0,
+      "precio": 23
     }
   ]
 }

@@ -2,84 +2,74 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Header from "../../../../components/Header";
-import Sidebar from "../../../../components/Sidebar";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 
 const CATEGORY_OPTIONS = [
   "BOLSAS","FERRETERIA","PERFUMERIA","LIQ. 5 LITROS","ESCOBAS","FIBRAS",
   "LIQ. 1 LITRO","JARCERIA","PASTILLA/AROMA","PAPEL","VENENO","DESPACHADORES",
-  "LIQ. 500 ML","TRAPADORES BG","DULCERIA"
+  "LIQ. 500 ML","TRAPADORES BG","DULCERIA",
 ];
-
-type NewProduct = {
-  sku: string;
-  nombre: string;
-  categoria: string;
-  stock: number;
-  precio: number;
-};
 
 export default function NewProductPage() {
   const router = useRouter();
   const [sidebarWidth, setSidebarWidth] = useState("64px");
 
-  const [form, setForm] = useState<NewProduct>({ sku: "", nombre: "", categoria: "", stock: 0, precio: 0 });
-  const [errors, setErrors] = useState<{ [k: string]: string }>({});
+  const [form, setForm] = useState({
+    sku: "",
+    nombre: "",
+    categoria: "",
+    precio: 0,
+  });
+  const [errors, setErrors] = useState<{[k:string]: string}>({});
   const [saving, setSaving] = useState(false);
 
-  const handleChange = (k: keyof NewProduct, v: string) => {
-    setForm((prev) => ({ ...prev, [k]: k === "stock" || k === "precio" ? (v === "" ? 0 : Number(v)) : v }));
+  const handle = (k: keyof typeof form, v: string) => {
+    setForm(prev => ({
+      ...prev,
+      [k]: k === "precio" ? Number(v) : v,
+    }));
   };
 
-  const validate = (): boolean => {
-    const e: { [k: string]: string } = {};
+  const validate = () => {
+    const e: {[k:string]: string} = {};
     if (!form.sku.trim()) e.sku = "SKU requerido";
     if (!form.nombre.trim()) e.nombre = "Nombre requerido";
-    if (!form.categoria) e.categoria = "Selecciona una categoría";
-    if (Number.isNaN(form.stock) || form.stock < 0) e.stock = "Stock debe ser 0 o mayor";
-    if (Number.isNaN(form.precio) || form.precio < 0) e.precio = "Precio debe ser 0 o mayor";
+    if (!form.categoria.trim()) e.categoria = "Categoría requerida";
+    if (!Number.isFinite(form.precio) || form.precio < 0) e.precio = "Precio inválido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
     if (!validate()) return;
     setSaving(true);
     try {
-      // 1) Crear producto
-      const res = await fetch("/api/products", {
-        method: "POST",
+      // ⚠️ Creamos el producto sin stock (la API lo fija a 0)
+      const res = await fetch(`/api/products/${encodeURIComponent(form.sku)}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nombre: form.nombre,
+          categoria: form.categoria,
+          precio: form.precio,
+          // 👇 No enviamos 'stock'
+        }),
       });
-      if (!res.ok) throw new Error("No se pudo guardar el producto");
+      if (!res.ok) throw new Error();
 
-      // 2) Si hay stock inicial, registrar movement "Stock In"
-      if (form.stock > 0) {
-        await fetch("/api/movements", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product: form.nombre,
-            sku: form.sku,
-            movement: "Stock In",
-            quantity: form.stock,
-            user: "System",
-          }),
-        });
-      }
-
-      router.push("/products");
-    } catch (err) {
-      alert("No se pudo guardar.");
+      // Tras crearlo, te llevo directo a crear su primer movimiento
+      router.push(`/movements/new?sku=${encodeURIComponent(form.sku)}`);
+    } catch {
+      alert("No se pudo crear el producto.");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
+    <div className="flex h-screen" style={{ margin:0, padding:0 }}>
       <Sidebar onWidthChange={setSidebarWidth} />
       <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
         <Header />
@@ -88,11 +78,14 @@ export default function NewProductPage() {
 
           <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-3xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
                 <input
-                  type="text" value={form.sku} onChange={(e) => handleChange("sku", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.sku ? "border-red-500" : "border-gray-300"}`} placeholder="e.g. BOL-012"
+                  value={form.sku}
+                  onChange={e => handle("sku", e.target.value)}
+                  className={`w-full border rounded p-2 focus:outline-none ${errors.sku ? "border-red-500" : "border-gray-300"}`}
+                  placeholder="Ej. BOL-012"
                 />
                 {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku}</p>}
               </div>
@@ -100,8 +93,10 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input
-                  type="text" value={form.nombre} onChange={(e) => handleChange("nombre", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.nombre ? "border-red-500" : "border-gray-300"}`} placeholder="Nombre del producto"
+                  value={form.nombre}
+                  onChange={e => handle("nombre", e.target.value)}
+                  className={`w-full border rounded p-2 focus:outline-none ${errors.nombre ? "border-red-500" : "border-gray-300"}`}
+                  placeholder="Nombre del producto"
                 />
                 {errors.nombre && <p className="text-sm text-red-600 mt-1">{errors.nombre}</p>}
               </div>
@@ -109,32 +104,29 @@ export default function NewProductPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
-                  value={form.categoria} onChange={(e) => handleChange("categoria", e.target.value)}
+                  value={form.categoria}
+                  onChange={e => handle("categoria", e.target.value)}
                   className={`w-full border rounded p-2 bg-white ${errors.categoria ? "border-red-500" : "border-gray-300"}`}
                 >
                   <option value="">Selecciona categoría</option>
-                  {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                 {errors.categoria && <p className="text-sm text-red-600 mt-1">{errors.categoria}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                <input
-                  type="number" min={0} value={form.stock ?? 0} onChange={(e) => handleChange("stock", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.stock ? "border-red-500" : "border-gray-300"}`} placeholder="0"
-                />
-                {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
                 <input
-                  type="number" min={0} value={form.precio ?? 0} onChange={(e) => handleChange("precio", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.precio ? "border-red-500" : "border-gray-300"}`} placeholder="0"
+                  type="number" min={0}
+                  value={form.precio}
+                  onChange={e => handle("precio", e.target.value)}
+                  className={`w-full border rounded p-2 focus:outline-none ${errors.precio ? "border-red-500" : "border-gray-300"}`}
+                  placeholder="0.00"
                 />
                 {errors.precio && <p className="text-sm text-red-600 mt-1">{errors.precio}</p>}
               </div>
+
+              {/* SIN campo de Stock, por diseño */}
             </div>
 
             <div className="mt-6 flex items-center gap-3">
@@ -147,7 +139,7 @@ export default function NewProductPage() {
             </div>
 
             <p className="text-xs text-gray-500 mt-4">
-              *Se guarda en <code>data/productos.json</code> y se registra movimiento si el stock inicial &gt; 0.
+              *El stock inicial siempre es 0. Para agregar existencias, usa <strong>Movements</strong>.
             </p>
           </form>
         </div>

@@ -1,6 +1,87 @@
 {
   "movements": [
     {
+      "id": "143199bc-c169-4354-9274-419999ad59a7",
+      "product": "siete",
+      "sku": "PRU-007",
+      "movement": "Stock In",
+      "quantity": 20,
+      "user": "System",
+      "date": "2025-10-13T09:05:53.546Z"
+    },
+    {
+      "id": "d66a58e3-cf28-4d67-87e2-86bd6986b0a1",
+      "product": "aaa",
+      "sku": "PRU-007",
+      "movement": "Stock In",
+      "quantity": 50,
+      "user": "System",
+      "date": "2025-10-13T09:04:52.558Z"
+    },
+    {
+      "id": "1e1f29cc-f604-4685-a68d-90c42dbaa5ed",
+      "product": "prueba cuatro",
+      "sku": "PRU-004",
+      "movement": "Stock Out",
+      "quantity": 50,
+      "user": "System",
+      "date": "2025-10-13T09:04:10.518Z"
+    },
+    {
+      "id": "34ed98d4-0e59-4dc0-b840-b1d15397ee62",
+      "product": "prueba cuatro",
+      "sku": "PRU-004",
+      "movement": "Stock In",
+      "quantity": 40,
+      "user": "System",
+      "date": "2025-10-13T08:59:39.612Z"
+    },
+    {
+      "id": "f978c042-f3df-41d2-b8fc-4455fb7f96c6",
+      "product": "prueba tres",
+      "sku": "PRU-003",
+      "movement": "Stock Out",
+      "quantity": 100,
+      "user": "System",
+      "date": "2025-10-13T08:59:03.774Z"
+    },
+    {
+      "id": "3b047e39-45a2-4828-88c6-537aaf5279e9",
+      "product": "prueba tres",
+      "sku": "PRU-003",
+      "movement": "Stock In",
+      "quantity": 45,
+      "user": "System",
+      "date": "2025-10-13T08:57:20.714Z"
+    },
+    {
+      "id": "74168a64-e6a5-4a22-be68-7c052ae19127",
+      "product": "prueba dos",
+      "sku": "PRU-002",
+      "movement": "Stock In",
+      "quantity": 10,
+      "user": "System",
+      "date": "2025-10-13T08:54:15.197Z"
+    },
+    {
+      "id": "f9e16801-9cc4-49c9-b453-fe86086eeaba",
+      "product": "prueba",
+      "sku": "PRU-001",
+      "movement": "Stock Out",
+      "quantity": 8,
+      "user": "System",
+      "date": "2025-10-13T08:47:23.343Z"
+    },
+    {
+      "id": "a22ec59a-5a6a-43b9-a7eb-e3f7d9aeb6a6",
+      "product": "prueba",
+      "sku": "PRU-001",
+      "movement": "Stock In",
+      "quantity": 1,
+      "user": "System",
+      "date": "2025-10-13T08:47:02.005Z"
+    },
+    {
       "id": "78753ef4-ce62-47c7-ba5b-cb5a1b88ec76",
       "product": "Bolsa negra 60 x 90 cm (B60)",
       "sku": "BOL-012",

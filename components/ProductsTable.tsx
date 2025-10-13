@@ -1,28 +1,24 @@
-"use client";
+import React from "react";
+import { MdEdit, MdClose, MdCheckCircle, MdWarning, MdCancel } from "react-icons/md";
+import Link from "next/link";
 
-import React from 'react';
-import { MdEdit, MdClose, MdCheckCircle, MdWarning, MdCancel } from 'react-icons/md';
-
-// Define the Product type
-export interface Product {
-  id?: number; // opcional: muchos registros no traen id
+type ProductRow = {
   sku: string;
   nombre: string;
   precio: number;
   categoria: string;
   stock: number;
-  estado: string; // "Available" | "Restock Soon" | "Out of Stock"
-}
-
-type Props = {
-  products: Product[];
-  onEdit?: (p: Product) => void;
-  onDelete?: (p: Product) => void;
+  estado: "Available" | "Restock Soon" | "Out of Stock" | string;
 };
 
-// Helper to render status with color and icon
+type Props = {
+  products: ProductRow[];
+  /** Se llama después de borrar para que el padre refresque o quite el item de la lista */
+  onDeleted?: (sku: string) => void;
+};
+
 const StatusCell: React.FC<{ status: string }> = ({ status }) => {
-  if (status === 'Available') {
+  if (status === "Available") {
     return (
       <span className="flex items-center justify-center gap-1 text-green-600 font-semibold">
         <MdCheckCircle className="text-green-500" size={18} />
@@ -30,7 +26,7 @@ const StatusCell: React.FC<{ status: string }> = ({ status }) => {
       </span>
     );
   }
-  if (status === 'Restock Soon') {
+  if (status === "Restock Soon") {
     return (
       <span className="flex items-center justify-center gap-1 text-yellow-600 font-semibold">
         <MdWarning className="text-yellow-500" size={18} />
@@ -38,7 +34,7 @@ const StatusCell: React.FC<{ status: string }> = ({ status }) => {
       </span>
     );
   }
-  if (status === 'Out of Stock') {
+  if (status === "Out of Stock") {
     return (
       <span className="flex items-center justify-center gap-1 text-red-600 font-semibold">
         <MdCancel className="text-red-500" size={18} />
@@ -49,7 +45,27 @@ const StatusCell: React.FC<{ status: string }> = ({ status }) => {
   return <span>{status}</span>;
 };
 
-const ProductsTable: React.FC<Props> = ({ products, onEdit, onDelete }) => {
+const ProductsTable: React.FC<Props> = ({ products, onDeleted }) => {
+  const handleDelete = async (sku: string) => {
+    if (!confirm(`Delete product ${sku}?`)) return;
+    try {
+      const res = await fetch(`/api/products/${encodeURIComponent(sku)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        let msg = "Could not delete product.";
+        try {
+          msg = (await res.json())?.error ?? msg;
+        } catch {}
+        alert(msg);
+        return;
+      }
+      onDeleted?.(sku);
+    } catch {
+      alert("Network error deleting product.");
+    }
+  };
+
   return (
     <div>
       <table className="w-full border-collapse rounded-lg shadow-bottom-sides">
@@ -66,10 +82,7 @@ const ProductsTable: React.FC<Props> = ({ products, onEdit, onDelete }) => {
         </thead>
         <tbody>
           {products.map((product, idx) => (
-            <tr
-              key={`${product.sku ?? product.id ?? 'no-key'}-${idx}`} // ✅ clave estable y única
-              className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
-            >
+            <tr key={product.sku} className={idx % 2 === 0 ? "bg-white" : "bg-gray-100"}>
               <td className="p-2 text-center">{product.sku}</td>
               <td className="p-2 text-left">{product.nombre}</td>
               <td className="p-2 text-center">${product.precio}</td>
@@ -79,19 +92,19 @@ const ProductsTable: React.FC<Props> = ({ products, onEdit, onDelete }) => {
               </td>
               <td className="p-2 text-center">{product.stock}</td>
               <td className="p-2 flex justify-center gap-2">
-                {/* Edit button */}
-                <button
-                  type="button"
-                  onClick={() => onEdit?.(product)}
+                {/* Edit -> usa /products/edit?sku=... */}
+                <Link
+                  href={`/products/edit?sku=${encodeURIComponent(product.sku)}`}
                   className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                   title="Edit"
                 >
                   <MdEdit size={20} />
-                </button>
-                {/* Delete button */}
+                </Link>
+
+                {/* Delete */}
                 <button
                   type="button"
-                  onClick={() => onDelete?.(product)}
+                  onClick={() => handleDelete(product.sku)}
                   className="w-8 h-8 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white rounded-md"
                   title="Delete"
                 >
@@ -100,6 +113,14 @@ const ProductsTable: React.FC<Props> = ({ products, onEdit, onDelete }) => {
               </td>
             </tr>
           ))}
+
+          {products.length === 0 && (
+            <tr>
+              <td className="p-6 text-center text-gray-500" colSpan={7}>
+                No products found.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
