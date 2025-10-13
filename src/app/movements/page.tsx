@@ -250,7 +250,7 @@ export default function MovementsPage() {
             </div>
           </div>
 
-          {/* Tabla (ahora con keys seguras) */}
+          {/* Tabla (keys seguras y botón Edit protegido) */}
           <div className="rounded-xl shadow overflow-hidden">
             <table className="w-full border-collapse bg-white rounded-xl shadow">
               <thead>
@@ -270,6 +270,8 @@ export default function MovementsPage() {
                   const safeKey =
                     (m.id && String(m.id).trim()) ||
                     `${m.sku}|${m.product}|${m.movement}|${m.quantity}|${m.user}|${m.date || "na"}|${idx}`;
+
+                  const hasId = Boolean(m.id && String(m.id).trim());
 
                   return (
                     <tr
@@ -295,14 +297,26 @@ export default function MovementsPage() {
                       </td>
                       <td className="p-2 text-center">{m.quantity}</td>
                       <td className="p-2 text-center">{m.user}</td>
+
                       <td className="p-2 text-center">
-                        <Link
-                          href={`/movements/${encodeURIComponent(m.id || "")}/edit`}
-                          className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                          title="Edit"
-                        >
-                          <MdEdit size={18} />
-                        </Link>
+                        {hasId ? (
+                          <Link
+                            href={`/movements/${encodeURIComponent(m.id!)}/edit`}
+                            className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                            title="Edit"
+                          >
+                            <MdEdit size={18} />
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            title="No id"
+                            className="inline-flex items-center justify-center w-8 h-8 bg-gray-300 text-white rounded-md cursor-not-allowed"
+                          >
+                            <MdEdit size={18} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

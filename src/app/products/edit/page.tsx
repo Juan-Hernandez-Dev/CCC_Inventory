@@ -1,9 +1,27 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Header from "../../../../components/Header";
-import Sidebar from "../../../../components/Sidebar";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
+
+type MovementType = "Stock In" | "Stock Out";
+type Movement = {
+  id: string;
+  date: string;
+  product: string;
+  sku: string;
+  movement: MovementType;
+  quantity: number;
+  user: string;
+};
+type Product = {
+  sku: string;
+  nombre: string;
+  categoria: string;
+  stock: number;   // base del JSON (no editable aquí)
+  precio: number;
+};
 
 const CATEGORY_OPTIONS = [
   "BOLSAS","FERRETERIA","PERFUMERIA","LIQ. 5 LITROS","ESCOBAS","FIBRAS",
@@ -11,120 +29,132 @@ const CATEGORY_OPTIONS = [
   "LIQ. 500 ML","TRAPADORES BG","DULCERIA"
 ];
 
-type Product = {
-  sku: string;
-  nombre: string;
-  categoria: string;
-  stock: number;
-  precio: number;
-};
-
 export default function EditProductPage() {
   const router = useRouter();
   const search = useSearchParams();
   const [sidebarWidth, setSidebarWidth] = useState("64px");
-  const sku = search.get("sku") ?? "";
 
-  const [form, setForm] = useState<Product>({ sku, nombre: "", categoria: "", stock: 0, precio: 0 });
-  const [errors, setErrors] = useState<{ [k: string]: string }>({});
+  const [sku, setSku] = useState("");
+  const [form, setForm] = useState<Pick<Product, "nombre"|"categoria"|"precio">>({
+    nombre: "",
+    categoria: "",
+    precio: 0,
+  });
+  const [baseStock, setBaseStock] = useState(0);
+  const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [originalStock, setOriginalStock] = useState<number>(0);
+  const [notFound, setNotFound] = useState(false);
 
+  // Carga inicial leyendo ?sku=...
   useEffect(() => {
-    let isMounted = true;
+    const qsSku = (search.get("sku") || "").trim();
+    setSku(qsSku);
+
+    if (!qsSku) { setLoading(false); return; }
+
     (async () => {
-      setLoading(true);
-      setApiError(null);
       try {
-        const res = await fetch(`/api/products/${encodeURIComponent(sku)}`, { cache: "no-store" });
-        if (res.status === 404) {
-          if (isMounted) {
-            setNotFound(true);
-            setForm(f => ({ ...f, sku }));
-            setOriginalStock(0);
-          }
-        } else if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
+        const [pRes, mRes] = await Promise.all([
+          fetch(`/api/products/${encodeURIComponent(qsSku)}`, { cache: "no-store" }),
+          fetch("/api/movements", { cache: "no-store" }),
+        ]);
+
+        const mjson = await mRes.json();
+        setMovements(mjson.movements ?? []);
+
+        if (!pRes.ok) {
+          // SKU NO EXISTE → modo “crear”
+          setNotFound(true);
+          setBaseStock(0);
+          setForm({ nombre: "", categoria: "", precio: 0 });
         } else {
-          const p = (await res.json()) as Product;
-          if (isMounted) {
-            setForm({
-              sku: p.sku ?? sku,
-              nombre: p.nombre ?? "",
-              categoria: p.categoria ?? "",
-              stock: Number(p.stock ?? 0),
-              precio: Number(p.precio ?? 0),
-            });
-            setOriginalStock(Number(p.stock ?? 0));
-          }
+          const prod: Product = await pRes.json();
+          setNotFound(false);
+          setBaseStock(prod.stock);
+          setForm({ nombre: prod.nombre, categoria: prod.categoria, precio: prod.precio });
         }
-      } catch {
-        if (isMounted) setApiError("No se pudo cargar el producto.");
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { isMounted = false; };
-  }, [sku]);
+  }, [search]);
 
-  const handleChange = (k: keyof Product, v: string) => {
+  // Delta de movimientos para el SKU
+  const delta = useMemo(() => {
+    if (!sku) return 0;
+    return movements
+      .filter(m => m.sku === sku)
+      .reduce((acc, m) => acc + (m.movement === "Stock In" ? Number(m.quantity||0) : -Number(m.quantity||0)), 0);
+  }, [movements, sku]);
+
+  const effectiveStock = baseStock + delta; // mostrado solo lectura
+
+  const handleChange = (k: keyof typeof form, v: string) => {
     setForm(prev => ({
       ...prev,
-      [k]: k === "stock" || k === "precio" ? (v === "" ? 0 : Number(v)) : v
+      [k]: k === "precio" ? Number(v) : v
     }));
   };
 
-  const validate = () => {
-    const e: { [k: string]: string } = {};
-    if (!form.sku.trim()) e.sku = "SKU requerido";
-    if (!form.nombre.trim()) e.nombre = "Nombre requerido";
-    if (!form.categoria) e.categoria = "Selecciona una categoría";
-    if (Number.isNaN(form.stock) || form.stock < 0) e.stock = "Stock debe ser 0 o mayor";
-    if (Number.isNaN(form.precio) || form.precio < 0) e.precio = "Precio debe ser 0 o mayor";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const onSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!sku) { alert("Falta el SKU en la URL (?sku=...)"); return; }
     setSaving(true);
-    setApiError(null);
     try {
-      // 1) Guardar producto
-      const res = await fetch(`/api/products/${encodeURIComponent(form.sku)}`, {
+      // Importante: NO enviamos "stock" (se ajusta solo por Movements)
+      const res = await fetch(`/api/products/${encodeURIComponent(sku)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nombre: form.nombre,
+          categoria: form.categoria,
+          precio: form.precio,
+        }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      // 2) Si cambió el stock, registrar movimiento por la diferencia
-      const diff = Number(form.stock) - Number(originalStock);
-      if (diff !== 0) {
-        await fetch("/api/movements", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product: form.nombre,
-            sku: form.sku,
-            movement: diff > 0 ? "Stock In" : "Stock Out",
-            quantity: Math.abs(diff),
-            user: "System",
-          }),
-        });
-      }
-
+      if (!res.ok) throw new Error();
       router.push("/products");
     } catch {
-      setApiError("No se pudo guardar.");
+      alert("No se pudo guardar el producto.");
     } finally {
       setSaving(false);
     }
   };
+
+  const goAdjustStock = () => {
+    if (!sku) return;
+    router.push(`/movements/new?sku=${encodeURIComponent(sku)}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen" style={{ margin:0, padding:0 }}>
+        <Sidebar onWidthChange={setSidebarWidth} />
+        <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
+          <Header />
+          <div className="p-4">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sku) {
+    return (
+      <div className="flex h-screen" style={{ margin:0, padding:0 }}>
+        <Sidebar onWidthChange={setSidebarWidth} />
+        <div className="flex-1" style={{ marginLeft: sidebarWidth }}>
+          <Header />
+          <div className="p-4">
+            <h1 className="text-2xl mb-4 font-bold text-[#1F2937]">Edit Product</h1>
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+              Falta el parámetro <strong>sku</strong> en la URL.  
+              Abre esta página como: <code className="px-1 bg-gray-100 rounded">/products/edit?sku=BOL-012</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
@@ -134,63 +164,70 @@ export default function EditProductPage() {
         <div className="p-4 bg-[#f5f5f5] min-h-screen">
           <h1 className="text-2xl mb-4 font-bold text-[#1F2937]">Edit Product</h1>
 
-          {loading && <div className="mb-4 text-sm text-gray-600">Cargando…</div>}
           {notFound && (
-            <div className="mb-4 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-3">
-              El SKU <b>{sku}</b> no existe. Completa los campos y guarda para crearlo.
-            </div>
-          )}
-          {apiError && (
-            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">
-              {apiError}
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+              El SKU <strong>{sku}</strong> no existe. Completa los campos y guarda para crearlo (el stock se ajusta solo vía Movements).
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-3xl">
+          <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-4xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                <input type="text" value={form.sku} disabled className="w-full border rounded p-2 bg-gray-100 text-gray-600 border-gray-300" />
-                {errors.sku && <p className="text-sm text-red-600 mt-1">{errors.sku}</p>}
+                <input value={sku} disabled className="w-full border rounded p-2 bg-gray-100 text-gray-700" />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input
-                  type="text" value={form.nombre} onChange={(e) => handleChange("nombre", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.nombre ? "border-red-500" : "border-gray-300"}`}
+                  value={form.nombre}
+                  onChange={e => handleChange("nombre", e.target.value)}
+                  className="w-full border rounded p-2 focus:outline-none border-gray-300"
+                  placeholder="Nombre del producto"
                 />
-                {errors.nombre && <p className="text-sm text-red-600 mt-1">{errors.nombre}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
-                  value={form.categoria} onChange={(e) => handleChange("categoria", e.target.value)}
-                  className={`w-full border rounded p-2 bg-white ${errors.categoria ? "border-red-500" : "border-gray-300"}`}
+                  value={form.categoria}
+                  onChange={e => handleChange("categoria", e.target.value)}
+                  className="w-full border rounded p-2 bg-white border-gray-300"
                 >
                   <option value="">Selecciona categoría</option>
-                  {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                {errors.categoria && <p className="text-sm text-red-600 mt-1">{errors.categoria}</p>}
               </div>
 
+              {/* STOCK SOLO LECTURA */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stock (efectivo)</label>
                 <input
-                  type="number" min={0} value={form.stock ?? 0} onChange={(e) => handleChange("stock", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.stock ? "border-red-500" : "border-gray-300"}`}
+                  value={String(effectiveStock)}
+                  disabled
+                  className="w-full border rounded p-2 bg-gray-100 text-gray-700"
                 />
-                {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
+                <button
+                  type="button"
+                  onClick={goAdjustStock}
+                  className="mt-2 inline-flex items-center px-3 py-2 rounded bg-[#3F54CE] text-white hover:bg-blue-600"
+                >
+                  Adjust stock
+                </button>
+                <p className="text-xs text-gray-500 mt-1">
+                  El stock se ajusta solo desde Movements. Este valor incluye entradas/salidas.
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
                 <input
-                  type="number" min={0} value={form.precio ?? 0} onChange={(e) => handleChange("precio", e.target.value)}
-                  className={`w-full border rounded p-2 focus:outline-none ${errors.precio ? "border-red-500" : "border-gray-300"}`}
+                  type="number"
+                  min={0}
+                  value={form.precio}
+                  onChange={e => handleChange("precio", e.target.value)}
+                  className="w-full border rounded p-2 focus:outline-none border-gray-300"
                 />
-                {errors.precio && <p className="text-sm text-red-600 mt-1">{errors.precio}</p>}
               </div>
             </div>
 
@@ -204,7 +241,7 @@ export default function EditProductPage() {
             </div>
 
             <p className="text-xs text-gray-500 mt-4">
-              *Se guarda en <code>data/productos.json</code> y si cambia el stock se registra un movimiento automático.
+              *El stock base se mantiene en el JSON. Las entradas/salidas se registran en Movements.
             </p>
           </form>
         </div>

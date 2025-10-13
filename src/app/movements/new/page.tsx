@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import Header from "../../../../components/Header";
-import Sidebar from "../../../../components/Sidebar";
+import { useRouter, useSearchParams } from "next/navigation";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 
 type MovementType = "Stock In" | "Stock Out";
 type Product = { sku: string; nombre: string; categoria: string };
@@ -16,6 +16,7 @@ const CATEGORY_OPTIONS = [
 
 export default function NewMovementPage() {
   const router = useRouter();
+  const search = useSearchParams();
   const [sidebarWidth, setSidebarWidth] = useState("64px");
 
   const [catalog, setCatalog] = useState<Product[]>([]);
@@ -30,6 +31,7 @@ export default function NewMovementPage() {
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [saving, setSaving] = useState(false);
 
+  // Cargar catálogo
   useEffect(() => {
     (async () => {
       const res = await fetch("/api/products", { cache: "no-store" });
@@ -37,6 +39,17 @@ export default function NewMovementPage() {
       setCatalog(json.productos ?? []);
     })();
   }, []);
+
+  // Si viene ?sku=..., preseleccionarlo
+  useEffect(() => {
+    const qsSku = (search.get("sku") || "").trim();
+    if (!qsSku || catalog.length === 0) return;
+    const prod = catalog.find(p => p.sku === qsSku);
+    if (prod) {
+      setCategory(prod.categoria);
+      setForm(f => ({ ...f, sku: prod.sku, product: prod.nombre }));
+    }
+  }, [search, catalog]);
 
   const filteredByCategory = useMemo(
     () => (category ? catalog.filter(p => p.categoria === category) : catalog),
@@ -79,7 +92,7 @@ export default function NewMovementPage() {
       const res = await fetch("/api/movements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form), // date lo pone el backend si no lo mandamos
+        body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error();
       router.push("/movements");
@@ -100,12 +113,11 @@ export default function NewMovementPage() {
 
           <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-6 border max-w-3xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
                 <select
                   value={category}
-                  onChange={(e) => { setCategory(e.target.value); /* reset sku/product al cambiar */ setForm(f => ({ ...f, sku: "", product: "" })); }}
+                  onChange={(e) => { setCategory(e.target.value); setForm(f => ({ ...f, sku: "", product: "" })); }}
                   className="w-full border rounded p-2 bg-white border-gray-300"
                 >
                   <option value="">Todas</option>

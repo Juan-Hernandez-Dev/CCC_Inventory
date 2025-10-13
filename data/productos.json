@@ -4,17 +4,15 @@
       "sku": "BOL-012",
       "nombre": "Bolsa negra 60 x 90 cm (B60)",
       "categoria": "BOLSAS",
-      "stock": 5,
-      "precio": 45
+      "stock": 13,
+      "precio": 40
     },
     {
-      "id": 2,
       "sku": "FER-005",
       "nombre": "Afloja Todo 172ml GDOS",
-      "precio": 43,
       "categoria": "FERRETERIA",
       "stock": 0,
-      "estado": "Out of Stock"
+      "precio": 43
     },
     {
       "id": 3,
@@ -87,13 +85,11 @@
       "estado": "Available"
     },
     {
-      "id": 11,
       "sku": "VEN-008",
       "nombre": "Laminita RAID c/108 + Aparato Gratis (Veneno)",
-      "precio": 230,
       "categoria": "VENENO",
       "stock": 25,
-      "estado": "Available"
+      "precio": 23
     },
     {
       "id": 12,
@@ -132,18 +128,11 @@
       "estado": "Available"
     },
     {
-      "sku": "PRU-005",
-      "nombre": "Prueba cinco",
+      "sku": "PRU-001",
+      "nombre": "Prueba uno",
       "categoria": "BOLSAS",
-      "stock": 0,
-      "precio": 55
-    },
-    {
-      "sku": "PRU-006",
-      "nombre": "Prueba seis",
-      "categoria": "BOLSAS",
-      "stock": 180,
-      "precio": 100
+      "stock": 4,
+      "precio": 10
     }
   ]
 }
