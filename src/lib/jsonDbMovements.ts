@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 export type MovementType = "Stock In" | "Stock Out";
 export type Movement = {
   id: string;
-  date: string;
+  date: string;           // ISO
   product: string;
   sku: string;
   movement: MovementType;
@@ -17,6 +17,7 @@ const filePath = path.join(process.cwd(), "data", "movements.json");
 
 type FileShape = { movements: Movement[] } | Movement[];
 
+// ---- utils de archivo
 async function readRaw(): Promise<FileShape> {
   try {
     const txt = await fs.readFile(filePath, "utf8");
@@ -28,7 +29,6 @@ async function readRaw(): Promise<FileShape> {
 async function writeRaw(data: FileShape) {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
 }
-
 export async function readMovements(): Promise<Movement[]> {
   const raw = await readRaw();
   return Array.isArray(raw) ? raw : raw.movements ?? [];
@@ -39,41 +39,39 @@ export async function writeMovements(list: Movement[]) {
   else await writeRaw({ movements: list });
 }
 
-// --- Helpers de normalización ---
-function parseToIso(raw?: string): string {
-  // Si ya es válida, devuélvela en ISO “limpio”
-  if (raw && !Number.isNaN(new Date(raw).getTime())) {
-    return new Date(raw).toISOString();
+// ---- normalización de fecha
+function parseToIso(raw?: string): string | null {
+  if (!raw || typeof raw !== "string") return null;
+
+  const d1 = new Date(raw);
+  if (!Number.isNaN(d1.getTime())) return d1.toISOString();
+
+  const m = raw.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (m) {
+    const dd = Number(m[1]);
+    const mm = Number(m[2]);
+    const yyyy = Number(m[3]);
+    const hh = Number(m[4] ?? 0);
+    const mi = Number(m[5] ?? 0);
+    const ss = Number(m[6] ?? 0);
+    const d2 = new Date(yyyy, mm - 1, dd, hh, mi, ss);
+    if (!Number.isNaN(d2.getTime())) return d2.toISOString();
   }
-  // Fallback dd/MM/yyyy HH:mm(:ss)
-  if (raw) {
-    const m = raw.match(
-      /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
-    );
-    if (m) {
-      const dd = Number(m[1]);
-      const mm = Number(m[2]);
-      const yyyy = Number(m[3]);
-      const hh = Number(m[4] ?? 0);
-      const mi = Number(m[5] ?? 0);
-      const ss = Number(m[6] ?? 0);
-      const d = new Date(yyyy, mm - 1, dd, hh, mi, ss);
-      if (!Number.isNaN(d.getTime())) return d.toISOString();
-    }
-  }
-  // Último recurso: ahora
-  return new Date().toISOString();
+  return null;
 }
 
+// ---- operaciones
 export async function addMovement(
   m: Omit<Movement, "id" | "date"> & { date?: string }
 ) {
   const list = await readMovements();
-  const item: Movement = {
-    id: randomUUID(),
-    date: parseToIso(m.date),
-    ...m,
-  };
+  const iso = parseToIso(m.date) ?? new Date().toISOString();
+
+  // IMPORTANTE: primero spread, luego date -> así no se pisa con undefined
+  const item: Movement = { id: randomUUID(), ...m, date: iso };
+
   list.unshift(item);
   await writeMovements(list);
   return item;
@@ -84,14 +82,20 @@ export async function updateMovement(id: string, patch: Partial<Movement>) {
   const i = list.findIndex((x) => x.id === id);
   if (i < 0) return null;
 
-  const next = { ...list[i], ...patch };
-  if ("date" in patch) {
-    next.date = parseToIso(patch.date);
+  let nextDate = list[i].date;
+  if (typeof patch.date === "string") {
+    nextDate = parseToIso(patch.date) ?? list[i].date;
   }
-  list[i] = next;
 
+  const updated: Movement = {
+    ...list[i],
+    ...patch,
+    date: nextDate, // asegurar que prevalezca la fecha válida
+  };
+
+  list[i] = updated;
   await writeMovements(list);
-  return list[i];
+  return updated;
 }
 
 export async function deleteMovement(id: string) {

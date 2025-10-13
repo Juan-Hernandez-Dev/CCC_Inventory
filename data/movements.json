@@ -2,11 +2,73 @@
   "movements": [
     {
       "id": "",
+      "sku": "PRU-006",
+      "product": "Prueba seis",
+      "movement": "Stock Out",
+      "quantity": 200,
+      "user": "zuri",
+      "date": "2025-10-13T06:40:28.346Z"
+    },
+    {
+      "id": "",
+      "sku": "PRU-006",
+      "product": "Prueba seis",
+      "movement": "Stock Out",
+      "quantity": 100,
+      "user": "zuri"
+    },
+    {
+      "id": "",
+      "sku": "PRU-006",
+      "product": "Prueba seis",
+      "movement": "Stock In",
+      "quantity": 5,
+      "user": "zuri"
+    },
+    {
+      "id": "fda012b3-4fe3-4f0d-96ef-1ecddf6df575",
+      "sku": "PAP-011",
+      "product": "Rollo papel JUMBO 360m DALIA (Papel)",
+      "movement": "Stock Out",
+      "quantity": 1,
+      "user": "zuri",
+      "date": "2025-10-13T06:31:29.631Z"
+    },
+    {
+      "id": "752c3163-b7c6-47a4-aa81-493b14be699f",
+      "sku": "PAP-011",
+      "product": "Rollo papel JUMBO 360m DALIA (Papel)",
+      "movement": "Stock In",
+      "quantity": 10,
+      "user": "zuri",
+      "date": "2025-10-13T06:31:29.631Z"
+    },
+    {
+      "id": "357a24e9-a666-43d1-ac04-86bff5a01948",
+      "sku": "PRU-005",
+      "product": "Prueba cinco",
+      "movement": "Stock Out",
+      "quantity": 140,
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
+    },
+    {
+      "id": "15739678-9dc7-4930-ad6f-21fb674f80f3",
+      "sku": "PRU-006",
+      "product": "Prueba seis",
+      "movement": "Stock In",
+      "quantity": 180,
+      "user": "System",
+      "date": "2025-10-13T06:31:29.631Z"
+    },
+    {
+      "id": "bc9572b6-1117-4a2a-9dda-fc2acfa595bb",
       "sku": "PRU-005",
       "product": "Prueba cinco",
       "movement": "Stock In",
       "quantity": 150,
-      "user": "Zuri"
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "02f8292f-08c2-4827-99af-33539bab521b",
@@ -14,7 +76,8 @@
       "sku": "PAP-011",
       "movement": "Stock Out",
       "quantity": 15,
-      "user": "Zuri"
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "0e0ae249-70c4-4998-b02c-ee8f589216f1",
@@ -22,7 +85,8 @@
       "sku": "PAP-011",
       "movement": "Stock Out",
       "quantity": 18,
-      "user": "Zuri"
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "bcc6f8a0-16af-4bd8-a992-b2df28dfdec3",
@@ -30,7 +94,8 @@
       "sku": "PRU-001",
       "movement": "Stock In",
       "quantity": 10,
-      "user": "Zuri"
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "97d5dc00-426a-4ed9-aa38-28895da1b8cb",
@@ -38,7 +103,8 @@
       "sku": "PER-030",
       "movement": "Stock In",
       "quantity": 160,
-      "user": "Zuri"
+      "user": "Zuri",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "bda904f0-e34b-4193-b35b-a9b13e9bc77a",
@@ -46,7 +112,8 @@
       "sku": "PRU-001",
       "movement": "Stock In",
       "quantity": 1,
-      "user": "System"
+      "user": "System",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "cff4bbe4-0d8f-4e17-834f-302cacdfb908",
@@ -54,7 +121,8 @@
       "sku": "PRU-001",
       "movement": "Stock Out",
       "quantity": 5,
-      "user": "System"
+      "user": "System",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "d9fac2de-7168-4fb6-aba1-8a1592c05e3c",
@@ -62,7 +130,8 @@
       "sku": "ARO-016",
       "movement": "Stock In",
       "quantity": 15,
-      "user": "System"
+      "user": "System",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "e3cb6512-0044-4814-af47-44a3e7950762",
@@ -70,7 +139,8 @@
       "sku": "BOL-012",
       "movement": "Stock Out",
       "quantity": 30,
-      "user": "System"
+      "user": "System",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "22923e85-b805-4c2d-85de-3732ae8b807e",
@@ -78,7 +148,8 @@
       "sku": "PRU-004",
       "movement": "Stock In",
       "quantity": 15,
-      "user": "Juan Hernandez"
+      "user": "Juan Hernandez",
+      "date": "2025-10-13T06:31:29.631Z"
     },
     {
       "id": "29aecbdf-e343-4371-925b-771943cb94c4",
@@ -100,7 +171,7 @@
     },
     {
       "id": "mv-001",
-      "date": "2025-09-27T10:15:00Z",
+      "date": "2025-09-27T10:15:00.000Z",
       "product": "Bolsa negra 60 x 90 cm (B60)",
       "sku": "BOL-012",
       "movement": "Stock In",
@@ -109,7 +180,7 @@
     },
     {
       "id": "mv-002",
-      "date": "2025-09-29T18:40:00Z",
+      "date": "2025-09-29T18:40:00.000Z",
       "product": "Escoba de plástico",
       "sku": "ESC-002",
       "movement": "Stock Out",
@@ -118,7 +189,7 @@
     },
     {
       "id": "mv-003",
-      "date": "2025-10-10T13:55:00Z",
+      "date": "2025-10-10T13:55:00.000Z",
       "product": "Afloja Todo 172ml GDOS",
       "sku": "FER-005",
       "movement": "Stock In",
@@ -127,7 +198,7 @@
     },
     {
       "id": "mv-004",
-      "date": "2025-10-11T18:18:00Z",
+      "date": "2025-10-11T18:18:00.000Z",
       "product": "Fibra acero chica 30g. (FA30)",
       "sku": "FIB-002",
       "movement": "Stock In",
@@ -136,7 +207,7 @@
     },
     {
       "id": "mv-005",
-      "date": "2025-10-12T01:08:00Z",
+      "date": "2025-10-12T01:08:00.000Z",
       "product": "Afloja Todo 172ml GDOS",
       "sku": "FER-005",
       "movement": "Stock Out",

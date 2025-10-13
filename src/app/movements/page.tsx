@@ -10,13 +10,13 @@ import Link from "next/link";
 export type MovementType = "Stock In" | "Stock Out";
 export interface Movement {
   id: string;
-  date: string; // ISO o dd/MM/yyyy HH:mm (legacy)
+  date: string; // ISO
   product: string;
   sku: string;
   movement: MovementType;
   quantity: number;
   user: string;
-  categoria?: string; // categoría agregada dinámicamente
+  categoria?: string;
 }
 type Product = {
   sku: string;
@@ -26,7 +26,7 @@ type Product = {
   precio: number;
 };
 
-// Categorías fijas (orden igual al de Products)
+// Categorías fijas
 const CATEGORY_OPTIONS = [
   "BOLSAS",
   "FERRETERIA",
@@ -45,11 +45,10 @@ const CATEGORY_OPTIONS = [
   "DULCERIA",
 ];
 
-// >>> fmtDateTime ROBUSTO (acepta ISO y dd/MM/yyyy HH:mm; vacíos muestran "—")
+// Función de formato robusto
 const fmtDateTime = (raw?: string) => {
   if (!raw || typeof raw !== "string") return "—";
 
-  // Intento directo (ISO, etc.)
   let d = new Date(raw);
   if (!Number.isNaN(d.getTime())) {
     return new Intl.DateTimeFormat(undefined, {
@@ -58,13 +57,12 @@ const fmtDateTime = (raw?: string) => {
     }).format(d);
   }
 
-  // Fallback dd/MM/yyyy HH:mm(:ss) opcional
   const m = raw.match(
     /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
   );
   if (m) {
     const dd = Number(m[1]);
-    const mm = Number(m[2]); // 1..12
+    const mm = Number(m[2]);
     const yyyy = Number(m[3]);
     const hh = Number(m[4] ?? 0);
     const mi = Number(m[5] ?? 0);
@@ -101,11 +99,9 @@ export default function MovementsPage() {
   }, []);
 
   useEffect(() => {
-    // primera carga
     loadMovements();
     loadProducts();
 
-    // refrescar al volver a la pestaña
     const onFocus = () => {
       loadMovements();
       loadProducts();
@@ -121,7 +117,7 @@ export default function MovementsPage() {
     return map;
   }, [productsApi]);
 
-  // Enriquecer movimientos con categoría
+  // Enriquecer movimientos
   const movements: Movement[] = useMemo(
     () =>
       movementsApi.map((m) => ({
@@ -147,7 +143,6 @@ export default function MovementsPage() {
   const [category, setCategory] = useState("");
   const [movementType, setMovementType] = useState<"" | MovementType>("");
 
-  // Categorías combinadas: las fijas + las que aparezcan nuevas dinámicamente
   const categories = useMemo(() => {
     const set = new Set(CATEGORY_OPTIONS);
     movements.forEach((m) => m.categoria && set.add(m.categoria));
@@ -156,7 +151,6 @@ export default function MovementsPage() {
     );
   }, [movements]);
 
-  // Lista filtrada
   const [filtered, setFiltered] = useState(sorted);
 
   useEffect(() => {
@@ -177,6 +171,7 @@ export default function MovementsPage() {
     );
   }, [search, category, movementType, sorted]);
 
+  // ========= Render =========
   return (
     <div className="flex h-screen" style={{ margin: 0, padding: 0 }}>
       <Sidebar onWidthChange={setSidebarWidth} />
@@ -230,7 +225,7 @@ export default function MovementsPage() {
               <option value="Stock Out">Stock Out</option>
             </select>
 
-            {/* Add Movement -> página de formulario */}
+            {/* Add Movement */}
             <Link
               href="/movements/new"
               className="bg-[#3F54CE] text-white p-2 rounded hover:bg-blue-600 transition-colors"
@@ -255,7 +250,7 @@ export default function MovementsPage() {
             </div>
           </div>
 
-          {/* Tabla */}
+          {/* Tabla (ahora con keys seguras) */}
           <div className="rounded-xl shadow overflow-hidden">
             <table className="w-full border-collapse bg-white rounded-xl shadow">
               <thead>
@@ -271,41 +266,48 @@ export default function MovementsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m, idx) => (
-                  <tr
-                    key={m.id}
-                    className={`${
-                      idx % 2 === 0 ? "bg-white" : "bg-gray-100"
-                    } hover:bg-[#FFB34922] transition-colors`}
-                  >
-                    <td className="p-2 text-center">{fmtDateTime(m.date)}</td>
-                    <td className="p-2 text-center">{m.sku}</td>
-                    <td className="p-2 text-center">{m.product}</td>
-                    <td className="p-2 text-center">{m.categoria || "—"}</td>
-                    <td className="p-2 text-center">
-                      <span
-                        className={
-                          m.movement === "Stock In"
-                            ? "text-green-700 font-semibold"
-                            : "text-red-700 font-semibold"
-                        }
-                      >
-                        {m.movement}
-                      </span>
-                    </td>
-                    <td className="p-2 text-center">{m.quantity}</td>
-                    <td className="p-2 text-center">{m.user}</td>
-                    <td className="p-2 text-center">
-                      <Link
-                        href={`/movements/${encodeURIComponent(m.id)}/edit`}
-                        className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                        title="Edit"
-                      >
-                        <MdEdit size={18} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((m, idx) => {
+                  const safeKey =
+                    (m.id && String(m.id).trim()) ||
+                    `${m.sku}|${m.product}|${m.movement}|${m.quantity}|${m.user}|${m.date || "na"}|${idx}`;
+
+                  return (
+                    <tr
+                      key={safeKey}
+                      className={`${
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-100"
+                      } hover:bg-[#FFB34922] transition-colors`}
+                    >
+                      <td className="p-2 text-center">{fmtDateTime(m.date)}</td>
+                      <td className="p-2 text-center">{m.sku}</td>
+                      <td className="p-2 text-center">{m.product}</td>
+                      <td className="p-2 text-center">{m.categoria || "—"}</td>
+                      <td className="p-2 text-center">
+                        <span
+                          className={
+                            m.movement === "Stock In"
+                              ? "text-green-700 font-semibold"
+                              : "text-red-700 font-semibold"
+                          }
+                        >
+                          {m.movement}
+                        </span>
+                      </td>
+                      <td className="p-2 text-center">{m.quantity}</td>
+                      <td className="p-2 text-center">{m.user}</td>
+                      <td className="p-2 text-center">
+                        <Link
+                          href={`/movements/${encodeURIComponent(m.id || "")}/edit`}
+                          className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                          title="Edit"
+                        >
+                          <MdEdit size={18} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={8} className="p-6 text-center text-gray-500">

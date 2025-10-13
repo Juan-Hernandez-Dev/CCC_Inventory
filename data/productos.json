@@ -132,18 +132,18 @@
       "estado": "Available"
     },
     {
-      "sku": "PRU-001",
-      "nombre": "Prueba 1",
-      "categoria": "JARCERIA",
-      "stock": 6,
-      "precio": 10
-    },
-    {
       "sku": "PRU-005",
       "nombre": "Prueba cinco",
       "categoria": "BOLSAS",
       "stock": 0,
-      "precio": 50
+      "precio": 55
+    },
+    {
+      "sku": "PRU-006",
+      "nombre": "Prueba seis",
+      "categoria": "BOLSAS",
+      "stock": 180,
+      "precio": 100
     }
   ]
 }
