@@ -1,6 +1,15 @@
 {
   "movements": [
     {
+      "id": "8be85987-4cb2-4882-baaf-23231fbf2307",
+      "product": "prueba cuatro",
+      "sku": "PRU-004",
+      "movement": "Stock In",
+      "quantity": 10,
+      "user": "System",
+      "date": "2025-10-13T09:07:40.121Z"
+    },
+    {
       "id": "143199bc-c169-4354-9274-419999ad59a7",
       "product": "siete",
       "sku": "PRU-007",
