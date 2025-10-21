@@ -1,6 +1,15 @@
 {
   "movements": [
     {
+      "id": "6c074cf4-944b-4887-9549-2d58ad594c10",
+      "product": "Fibra acero chica 30g. (FA30)",
+      "sku": "FIB-002",
+      "movement": "Stock In",
+      "quantity": 4,
+      "user": "System",
+      "date": "2025-10-21T22:17:11.731Z"
+    },
+    {
       "id": "8be85987-4cb2-4882-baaf-23231fbf2307",
       "product": "prueba cuatro",
       "sku": "PRU-004",
